@@ -565,6 +565,13 @@ async function loadFromAppsScript() {
     const resp = await r.json();
     const sheetTs  = resp.ts || 0;
     const localTs  = parseInt(localStorage.getItem('mcf_ts') || '0');
+    // Aplicar preferencia de vista del Sheet (siempre, independiente del timestamp)
+    if (resp.settings && resp.settings.view && ['grid','list'].includes(resp.settings.view)) {
+      view = resp.settings.view;
+      localStorage.setItem('mcf_view', view);
+      document.getElementById('grid').classList.toggle('list-view', view === 'list');
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    }
     // Usar Sheet solo si es más nuevo que los datos locales
     if (sheetTs > localTs && Array.isArray(resp.items) && resp.items.length) {
       items = resp.items;
@@ -948,6 +955,10 @@ document.getElementById('view-toggle').addEventListener('click', e => {
   if (!btn) return;
   view = btn.dataset.view;
   localStorage.setItem('mcf_view', view);
+  if (APPS_SCRIPT_URL) {
+    const qs = new URLSearchParams({ action: 'save_setting', key: 'view', value: view });
+    fetch(`${APPS_SCRIPT_URL}?${qs}`, { mode: 'no-cors' }).catch(() => {});
+  }
   applyView(); render();
 });
 
