@@ -130,7 +130,7 @@
 
     /* Image carousel */
     .view-images { margin-top: 18px; }
-    .carousel { position: relative; width: calc(100% + 44px); margin-left: -22px; background: #000; }
+    .carousel { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; }
     .carousel-track { display: flex; overflow: hidden; width: 100%; }
     .carousel-slide { flex: 0 0 100%; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; }
     .carousel-slide img { width: 100%; height: 100%; object-fit: contain; }
@@ -693,7 +693,7 @@ function render() {
     const date = item.c && item.cd ? `<span class="card-date">${fmtDate(item.cd)}</span>` : '';
     const ec   = (item.ev||[]).length;
     const eb   = ec ? `<span class="evid-count"><i class="fas fa-paperclip"></i>${ec}</span>` : '';
-    const imgs = (item.ev||[]).filter(e => e.k==='image' || isImage(e.u));
+    const imgs = (item.ev||[]).filter(e => e.k==='image');
     const th   = imgs.length ? `<div class="card-thumbs">${imgs.slice(0,4).map(e=>`<img class="card-thumb" src="${esc(e.u)}" alt="" loading="lazy">`).join('')}</div>` : '';
     return `<div class="item-card ${cls}" data-id="${item.id}">
       <div class="card-top"><span class="card-num">#${item.id}</span><span class="card-title">${esc(item.t)}</span></div>
@@ -725,8 +725,8 @@ function showViewMode(item) {
 
   // Separate evidence into images and non-image links
   const ev    = item.ev || [];
-  const imgs  = ev.filter(e => e.k === 'image' || (e.k !== 'file' && isImage(e.u)));
-  const links = ev.filter(e => !imgs.includes(e));
+  const imgs  = ev.filter(e => e.k === 'image');
+  const links = ev.filter(e => e.k !== 'image');
 
   // Images carousel
   const imagesEl = document.getElementById('view-images');
