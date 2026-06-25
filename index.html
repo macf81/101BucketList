@@ -128,14 +128,20 @@
     .view-status-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
     .view-date       { font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 5px; }
 
-    /* Image gallery */
+    /* Image carousel */
     .view-images { margin-top: 18px; }
-    .view-images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-    .view-img-link    { display: block; aspect-ratio: 4/3; overflow: hidden; border-radius: 10px; border: 1px solid var(--border); }
-    .view-img-link img{ width: 100%; height: 100%; object-fit: cover; transition: transform .25s; }
-    .view-img-link:hover img { transform: scale(1.06); }
-    /* Single image: full width */
-    .view-images-grid.single .view-img-link { aspect-ratio: 16/9; }
+    .carousel { position: relative; width: calc(100% + 44px); margin-left: -22px; background: #000; }
+    .carousel-track { display: flex; overflow: hidden; width: 100%; }
+    .carousel-slide { flex: 0 0 100%; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; }
+    .carousel-slide img { width: 100%; height: 100%; object-fit: contain; }
+    .carousel-slide a { display: contents; }
+    .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,.45); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; z-index: 2; }
+    .carousel-btn:hover { background: rgba(0,0,0,.75); }
+    .carousel-btn.prev { left: 10px; }
+    .carousel-btn.next { right: 10px; }
+    .carousel-dots { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+    .carousel-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.45); cursor: pointer; transition: background .15s; border: none; padding: 0; }
+    .carousel-dot.active { background: #fff; }
 
     /* Links */
     .view-links      { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
@@ -303,10 +309,15 @@
     <div id="view-body">
       <div class="view-title" id="view-title"></div>
       <div class="view-status-row" id="view-status-row"></div>
-      <!-- Images -->
+      <!-- Images carousel -->
       <div id="view-images" style="display:none">
         <div class="view-section-label"><i class="fas fa-images"></i> Fotos</div>
-        <div class="view-images-grid" id="view-images-grid"></div>
+        <div class="carousel" id="carousel">
+          <div class="carousel-track" id="carousel-track"></div>
+          <button class="carousel-btn prev" id="carousel-prev" style="display:none"><i class="fas fa-chevron-left"></i></button>
+          <button class="carousel-btn next" id="carousel-next" style="display:none"><i class="fas fa-chevron-right"></i></button>
+          <div class="carousel-dots" id="carousel-dots"></div>
+        </div>
       </div>
       <!-- Links / Files -->
       <div id="view-links" style="display:none">
@@ -717,16 +728,38 @@ function showViewMode(item) {
   const imgs  = ev.filter(e => e.k === 'image' || (e.k !== 'file' && isImage(e.u)));
   const links = ev.filter(e => !imgs.includes(e));
 
-  // Images
+  // Images carousel
   const imagesEl = document.getElementById('view-images');
-  const gridEl   = document.getElementById('view-images-grid');
+  const trackEl  = document.getElementById('carousel-track');
+  const prevBtn  = document.getElementById('carousel-prev');
+  const nextBtn  = document.getElementById('carousel-next');
+  const dotsEl   = document.getElementById('carousel-dots');
   if (imgs.length) {
-    gridEl.className = 'view-images-grid' + (imgs.length === 1 ? ' single' : '');
-    gridEl.innerHTML = imgs.map(e =>
-      `<a href="${esc(e.u)}" target="_blank" rel="noopener" class="view-img-link">
-         <img src="${esc(e.u)}" alt="${esc(e.l)}" loading="lazy">
-       </a>`
+    let carouselIdx = 0;
+    trackEl.innerHTML = imgs.map(e =>
+      `<div class="carousel-slide">
+         <a href="${esc(e.u)}" target="_blank" rel="noopener">
+           <img src="${esc(e.u)}" alt="${esc(e.l)}" loading="lazy">
+         </a>
+       </div>`
     ).join('');
+    // dots
+    dotsEl.innerHTML = imgs.length > 1
+      ? imgs.map((_, i) => `<button class="carousel-dot${i===0?' active':''}" data-i="${i}"></button>`).join('')
+      : '';
+    // arrows
+    prevBtn.style.display = imgs.length > 1 ? 'flex' : 'none';
+    nextBtn.style.display = imgs.length > 1 ? 'flex' : 'none';
+
+    function goTo(idx) {
+      carouselIdx = (idx + imgs.length) % imgs.length;
+      trackEl.style.transform = `translateX(-${carouselIdx * 100}%)`;
+      trackEl.style.transition = 'transform .3s ease';
+      dotsEl.querySelectorAll('.carousel-dot').forEach((d, i) => d.classList.toggle('active', i === carouselIdx));
+    }
+    prevBtn.onclick = e => { e.stopPropagation(); goTo(carouselIdx - 1); };
+    nextBtn.onclick = e => { e.stopPropagation(); goTo(carouselIdx + 1); };
+    dotsEl.onclick  = e => { const d = e.target.closest('.carousel-dot'); if (d) goTo(+d.dataset.i); };
     imagesEl.style.display = 'block';
   } else {
     imagesEl.style.display = 'none';
