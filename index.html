@@ -540,17 +540,21 @@ function load() {
   persist();
 }
 
-function persist() {
+// changedId = id del item que cambió; isDelete = true si fue eliminado
+function persist(changedId, isDelete) {
   const ts = Date.now();
   localStorage.setItem(LS_KEY, JSON.stringify(items));
   localStorage.setItem('mcf_ts', ts.toString());
-  // Sync to Google Sheets via POST
-  if (APPS_SCRIPT_URL) {
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ items, ts }),
-      mode: 'no-cors'
-    }).catch(() => {});
+  if (!APPS_SCRIPT_URL || changedId === undefined) return;
+  // Envía solo el item afectado (no todos) → evita límites de URL y CORS
+  if (isDelete) {
+    const qs = new URLSearchParams({ action:'delete_item', id:changedId, ts });
+    fetch(`${APPS_SCRIPT_URL}?${qs}`, { mode:'no-cors' }).catch(() => {});
+  } else {
+    const item = items.find(i => i.id == changedId);
+    if (!item) return;
+    const qs = new URLSearchParams({ action:'save_item', data:JSON.stringify(item), ts });
+    fetch(`${APPS_SCRIPT_URL}?${qs}`, { mode:'no-cors' }).catch(() => {});
   }
 }
 
@@ -889,7 +893,7 @@ function saveItem() {
   if (editId != null) {
     const item = items.find(i => i.id === editId);
     if (item) Object.assign(item, {t:title, c:done, cd:done?doneDate:'', pd:done?'':planned, ev, n:notes});
-    persist(); updateStats(); render();
+    persist(editId); updateStats(); render();
     showViewMode(items.find(i => i.id === editId)); // back to view
     showToast(done ? '🎉 ¡Completado!' : '✅ Guardado');
   } else {
@@ -897,7 +901,7 @@ function saveItem() {
     const newItem = {id: maxId+1, t:title, c:done, cd:done?doneDate:'', pd:done?'':planned, ev, n:notes};
     items.push(newItem);
     editId = newItem.id;
-    persist(); updateStats(); render();
+    persist(newItem.id); updateStats(); render();
     showViewMode(newItem); // show view after adding
     showToast('✅ Item agregado');
   }
@@ -905,8 +909,9 @@ function saveItem() {
 
 function deleteItem() {
   if (!confirm('¿Eliminar este item de tu lista?')) return;
+  const delId = editId;
   items = items.filter(i => i.id !== editId);
-  persist(); updateStats(); render(); closeModal();
+  persist(delId, true); updateStats(); render(); closeModal();
   showToast('Eliminado');
 }
 
