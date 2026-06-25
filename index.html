@@ -541,12 +541,14 @@ function load() {
 }
 
 function persist() {
+  const ts = Date.now();
   localStorage.setItem(LS_KEY, JSON.stringify(items));
-  // Sync to Google Sheets via POST (no URL length limit)
+  localStorage.setItem('mcf_ts', ts.toString());
+  // Sync to Google Sheets via POST
   if (APPS_SCRIPT_URL) {
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      body: JSON.stringify(items),
+      body: JSON.stringify({ items, ts }),
       mode: 'no-cors'
     }).catch(() => {});
   }
@@ -554,14 +556,16 @@ function persist() {
 
 async function loadFromAppsScript() {
   if (!APPS_SCRIPT_URL) return;
-  // Solo carga desde el Sheet si no hay datos en localStorage (primer uso / nuevo dispositivo)
-  if (localStorage.getItem(LS_KEY)) return;
   try {
     const r = await fetch(APPS_SCRIPT_URL);
-    const data = await r.json();
-    if (Array.isArray(data) && data.length) {
-      items = data;
+    const resp = await r.json();
+    const sheetTs  = resp.ts || 0;
+    const localTs  = parseInt(localStorage.getItem('mcf_ts') || '0');
+    // Usar Sheet solo si es más nuevo que los datos locales
+    if (sheetTs > localTs && Array.isArray(resp.items) && resp.items.length) {
+      items = resp.items;
       localStorage.setItem(LS_KEY, JSON.stringify(items));
+      localStorage.setItem('mcf_ts', sheetTs.toString());
       render();
       updateStats();
     }
