@@ -542,18 +542,29 @@ function load() {
 
 function persist() {
   localStorage.setItem(LS_KEY, JSON.stringify(items));
+  // Sync to Google Sheets via POST (no URL length limit)
   if (APPS_SCRIPT_URL) {
-    const qs = new URLSearchParams({action:'save', data: JSON.stringify(items)});
-    fetch(`${APPS_SCRIPT_URL}?${qs}`, {mode:'no-cors'}).catch(() => {});
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(items),
+      mode: 'no-cors'
+    }).catch(() => {});
   }
 }
 
 async function loadFromAppsScript() {
   if (!APPS_SCRIPT_URL) return;
+  // Solo carga desde el Sheet si no hay datos en localStorage (primer uso / nuevo dispositivo)
+  if (localStorage.getItem(LS_KEY)) return;
   try {
     const r = await fetch(APPS_SCRIPT_URL);
     const data = await r.json();
-    if (Array.isArray(data) && data.length) { items = data; localStorage.setItem(LS_KEY, JSON.stringify(items)); }
+    if (Array.isArray(data) && data.length) {
+      items = data;
+      localStorage.setItem(LS_KEY, JSON.stringify(items));
+      render();
+      updateStats();
+    }
   } catch(e) {}
 }
 
