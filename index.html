@@ -130,11 +130,10 @@
 
     /* Image carousel */
     .view-images { margin-top: 18px; }
-    .carousel { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; }
-    .carousel-track { display: flex; overflow: hidden; width: 100%; }
-    .carousel-slide { flex: 0 0 100%; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; }
-    .carousel-slide img { width: 100%; height: 100%; object-fit: contain; }
-    .carousel-slide a { display: contents; }
+    .carousel { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 4/3; }
+    .carousel-track { display: flex; width: 100%; height: 100%; }
+    .carousel-slide { flex: 0 0 100%; height: 100%; position: relative; }
+    .carousel-slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; cursor: pointer; }
     .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,.45); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; z-index: 2; }
     .carousel-btn:hover { background: rgba(0,0,0,.75); }
     .carousel-btn.prev { left: 10px; }
@@ -738,9 +737,7 @@ function showViewMode(item) {
     let carouselIdx = 0;
     trackEl.innerHTML = imgs.map(e =>
       `<div class="carousel-slide">
-         <a href="${esc(e.u)}" target="_blank" rel="noopener">
-           <img src="${esc(e.u)}" alt="${esc(e.l)}" loading="lazy">
-         </a>
+         <img src="${esc(e.u)}" alt="${esc(e.l)}" loading="lazy" onclick="window.open('${esc(e.u)}','_blank')">
        </div>`
     ).join('');
     // dots
