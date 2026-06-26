@@ -30,7 +30,7 @@
 
     /* ── HEADER ─────────────────────────────────────────── */
     .profile-header { background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
-    .profile-cover  { background: var(--gradient); height: 36px; }
+    .profile-cover  { background: var(--gradient); height: 18px; }
     .profile-inner  { max-width: 960px; margin: 0 auto; padding: 0 20px 18px; }
     .profile-row    { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
     .profile-left   { display: flex; align-items: flex-end; gap: 16px; }
@@ -575,12 +575,18 @@ async function loadFromAppsScript() {
     const resp = await r.json();
     const sheetTs  = resp.ts || 0;
     const localTs  = parseInt(localStorage.getItem('mcf_ts') || '0');
-    // Aplicar preferencia de vista del Sheet (siempre, independiente del timestamp)
-    if (resp.settings && resp.settings.view && ['grid','list'].includes(resp.settings.view)) {
-      view = resp.settings.view;
-      localStorage.setItem('mcf_view', view);
-      document.getElementById('grid').classList.toggle('list-view', view === 'list');
-      document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    // Aplicar preferencias del Sheet (siempre, independiente del timestamp)
+    if (resp.settings) {
+      if (resp.settings.view && ['grid','list'].includes(resp.settings.view)) {
+        view = resp.settings.view;
+        localStorage.setItem('mcf_view', view);
+        document.getElementById('grid').classList.toggle('list-view', view === 'list');
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+      }
+      if (resp.settings.avatar) {
+        localStorage.setItem('mcf_avatar', resp.settings.avatar);
+        setAvatar(resp.settings.avatar);
+      }
     }
     // Usar Sheet solo si es más nuevo que los datos locales
     if (sheetTs > localTs && Array.isArray(resp.items) && resp.items.length) {
@@ -1058,12 +1064,25 @@ document.addEventListener('keydown', e => {
 
 // Avatar
 document.getElementById('avatar-wrap').addEventListener('click', () => document.getElementById('avatar-input').click());
-document.getElementById('avatar-input').addEventListener('change', e => {
+document.getElementById('avatar-input').addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => { localStorage.setItem('mcf_avatar', ev.target.result); setAvatar(ev.target.result); showToast('📷 Foto actualizada'); };
-  reader.readAsDataURL(file);
+  showToast('📷 Subiendo foto...');
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    const r    = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method:'POST', body:fd });
+    const data = await r.json();
+    const url  = data.secure_url;
+    localStorage.setItem('mcf_avatar', url);
+    setAvatar(url);
+    if (APPS_SCRIPT_URL) {
+      const qs = new URLSearchParams({ action:'save_setting', key:'avatar', value:url });
+      fetch(`${APPS_SCRIPT_URL}?${qs}`, { mode:'no-cors' }).catch(() => {});
+    }
+    showToast('📷 Foto actualizada');
+  } catch(err) { showToast('❌ Error subiendo foto'); }
 });
 
 /* ════════════════════════════════════════════════════════
@@ -1074,6 +1093,7 @@ async function init() {
   await loadFromAppsScript();
   const saved = localStorage.getItem('mcf_avatar');
   if (saved) setAvatar(saved);
+  else setAvatar('https://unavatar.io/instagram/macf81');
   applyView();
   updateStats();
   render();
