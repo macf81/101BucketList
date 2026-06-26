@@ -1092,7 +1092,8 @@ async function init() {
   load();
   await loadFromAppsScript();
   const saved = localStorage.getItem('mcf_avatar');
-  if (saved) setAvatar(saved);
+  // Ignorar base64 (formato antiguo, no sincronizable) — usar solo URLs reales
+  if (saved && !saved.startsWith('data:')) setAvatar(saved);
   else setAvatar('https://unavatar.io/spotify/user:1237100585');
   applyView();
   updateStats();
