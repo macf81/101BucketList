@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Libros • Mario</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --blue:#3b82f6; --green:#22c55e; --orange:#f97316; --red:#ef4444; --purple:#a855f7;
+      --green-bg:#f0fdf4; --orange-bg:#fff7ed; --blue-bg:#eff6ff; --red-bg:#fef2f2;
+      --text:#111827; --text2:#6b7280; --border:#e5e7eb;
+      --card:#ffffff; --bg:#f9fafb;
+      --gradient:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+      --shadow-sm:0 1px 3px rgba(0,0,0,.08); --shadow:0 4px 16px rgba(0,0,0,.10);
+    }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); }
+
+    .site-nav { background:var(--card); border-bottom:1px solid var(--border); display:flex; justify-content:center; overflow-x:auto; scrollbar-width:none; position:sticky; top:0; z-index:200; box-shadow:var(--shadow-sm); }
+    .site-nav::-webkit-scrollbar { display:none; }
+    .site-nav a { padding:10px 20px; text-decoration:none; color:var(--text2); font-size:13px; font-weight:600; border-bottom:2px solid transparent; white-space:nowrap; transition:all .15s; display:flex; align-items:center; gap:6px; }
+    .site-nav a:hover { color:var(--text); background:var(--bg); }
+    .site-nav a.active { color:var(--purple); border-bottom-color:var(--purple); }
+
+    .page-header { background:var(--card); border-bottom:1px solid var(--border); }
+    .header-cover { background:var(--gradient); height:18px; }
+    .header-inner { max-width:980px; margin:0 auto; padding:16px 20px 14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+    .header-title { font-size:22px; font-weight:800; display:flex; align-items:center; gap:10px; }
+    .header-stats { display:flex; gap:24px; }
+    .hstat { text-align:center; }
+    .hstat-num { font-size:22px; font-weight:800; line-height:1; }
+    .hstat-lbl { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; }
+    .hstat.done .hstat-num { color:var(--green); }
+    .hstat.pend .hstat-num { color:var(--orange); }
+    .prog-bar { height:4px; background:var(--border); border-radius:2px; margin-top:10px; max-width:300px; }
+    .prog-fill { height:100%; background:var(--green); border-radius:2px; transition:width .4s; }
+    .prog-pct { font-size:12px; color:var(--text2); margin-top:4px; }
+
+    .toolbar { max-width:980px; margin:0 auto; padding:14px 20px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .search-box { flex:1; min-width:200px; padding:8px 14px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:var(--card); outline:none; }
+    .search-box:focus { border-color:var(--purple); box-shadow:0 0 0 3px rgba(168,85,247,.12); }
+    .filter-tabs { display:flex; gap:6px; flex-wrap:wrap; }
+    .ftab { padding:7px 14px; border-radius:20px; border:1px solid var(--border); background:var(--card); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; color:var(--text2); }
+    .ftab:hover { border-color:var(--purple); color:var(--purple); }
+    .ftab.active { background:var(--text); color:#fff; border-color:var(--text); }
+    .add-btn { padding:8px 16px; background:var(--purple); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+    .add-btn:hover { opacity:.85; }
+
+    .items-grid { max-width:980px; margin:0 auto; padding:0 20px 60px; display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px; }
+    .item-card { background:var(--card); border-radius:12px; border:1px solid var(--border); overflow:hidden; cursor:pointer; transition:all .2s; box-shadow:var(--shadow-sm); }
+    .item-card:hover { transform:translateY(-3px); box-shadow:var(--shadow); }
+    .item-card.is-done { border-color:rgba(34,197,94,.35); }
+    .item-cover { width:100%; aspect-ratio:2/3; object-fit:cover; background:var(--border); display:block; }
+    .item-cover-ph { width:100%; aspect-ratio:2/3; background:linear-gradient(135deg,#2d1b69,#11998e,#38ef7d); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.4); font-size:40px; }
+    .item-info { padding:10px 12px 12px; }
+    .item-title { font-size:13px; font-weight:700; line-height:1.3; margin-bottom:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .item-author { font-size:12px; color:var(--text2); margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+    .item-footer { display:flex; align-items:center; justify-content:space-between; }
+    .stars-mini { display:flex; gap:1px; }
+    .star-mini { font-size:11px; color:#d1d5db; }
+    .star-mini.on { color:#f59e0b; }
+    .done-badge { font-size:11px; font-weight:600; padding:2px 7px; border-radius:10px; background:var(--green-bg); color:var(--green); }
+    .pend-badge { font-size:11px; font-weight:600; padding:2px 7px; border-radius:10px; background:var(--orange-bg); color:var(--orange); }
+    .empty { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--text2); }
+    .empty-add { margin-top:16px; padding:10px 20px; background:var(--purple); color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+
+    /* Modal */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; align-items:flex-end; justify-content:center; }
+    .overlay.open { display:flex; }
+    @media(min-width:600px){ .overlay { align-items:center; padding:20px; } }
+    .modal { background:var(--card); border-radius:20px 20px 0 0; width:100%; max-width:520px; max-height:92vh; overflow-y:auto; box-shadow:0 -4px 40px rgba(0,0,0,.2); }
+    @media(min-width:600px){ .modal { border-radius:20px; } }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 0; }
+    .modal-close { width:32px; height:32px; border:none; background:var(--bg); border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text2); font-size:16px; }
+    .modal-tabs { display:flex; border-bottom:1px solid var(--border); margin-top:12px; }
+    .mtab { flex:1; padding:10px; text-align:center; font-size:13px; font-weight:600; color:var(--text2); cursor:pointer; border-bottom:2px solid transparent; background:none; border-top:none; border-left:none; border-right:none; }
+    .mtab.active { color:var(--purple); border-bottom-color:var(--purple); }
+    .modal-body { padding:18px 20px 24px; }
+    .view-cover { width:100%; max-height:280px; object-fit:cover; border-radius:12px; margin-bottom:14px; }
+    .view-cover-ph { width:100%; height:200px; background:linear-gradient(135deg,#2d1b69,#11998e,#38ef7d); border-radius:12px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.4); font-size:60px; margin-bottom:14px; }
+    .modal-title { font-size:20px; font-weight:800; margin-bottom:4px; }
+    .modal-sub { font-size:14px; color:var(--text2); margin-bottom:14px; }
+    .section-lbl { font-size:11px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; display:flex; align-items:center; gap:5px; margin-top:14px; }
+    .watch-toggle { display:flex; align-items:center; justify-content:space-between; background:var(--bg); border-radius:10px; padding:12px 16px; }
+    .toggle-label { font-size:14px; font-weight:600; }
+    .toggle-wrap { position:relative; display:inline-block; width:44px; height:24px; cursor:pointer; }
+    .toggle-wrap input { opacity:0; width:0; height:0; }
+    .toggle-track { position:absolute; inset:0; background:#d1d5db; border-radius:12px; transition:.3s; }
+    .toggle-wrap input:checked + .toggle-track { background:var(--green); }
+    .toggle-track::after { content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; background:#fff; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+    .toggle-wrap input:checked + .toggle-track::after { left:22px; }
+    .stars-row { display:flex; gap:6px; }
+    .star-btn { font-size:28px; color:#d1d5db; cursor:pointer; transition:color .1s; background:none; border:none; padding:0; line-height:1; }
+    .star-btn.on { color:#f59e0b; }
+    .fgroup { margin-top:14px; }
+    .flabel { display:block; font-size:12px; font-weight:600; color:var(--text2); margin-bottom:6px; }
+    .finput { width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; outline:none; color:var(--text); background:var(--card); }
+    .finput:focus { border-color:var(--purple); box-shadow:0 0 0 3px rgba(168,85,247,.12); }
+    textarea.finput { resize:vertical; min-height:80px; }
+    .form-actions { display:flex; gap:10px; margin-top:16px; }
+    .btn-primary { flex:1; padding:12px; background:var(--text); color:#fff; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; }
+    .btn-primary:hover { opacity:.85; }
+    .btn-danger { padding:12px 16px; background:var(--red-bg); color:var(--red); border:1px solid var(--red); border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; }
+    .btn-danger:hover { background:var(--red); color:#fff; }
+
+    .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#1f2937; color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:500; z-index:999; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; }
+    .toast.show { opacity:1; }
+  </style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="index.html">🎯 101 Cosas</a>
+  <a href="albums.html">🎵 Álbumes</a>
+  <a href="movies.html">🎬 Películas</a>
+  <a href="books.html" class="active">📚 Libros</a>
+</nav>
+
+<div class="page-header">
+  <div class="header-cover"></div>
+  <div class="header-inner">
+    <div>
+      <div class="header-title">📚 Libros que leer antes de morir</div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="prog-pct" id="prog-pct">0% leídos</div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num" id="s-total">0</div><div class="hstat-lbl">Total</div></div>
+      <div class="hstat done"><div class="hstat-num" id="s-done">0</div><div class="hstat-lbl">Leídos</div></div>
+      <div class="hstat pend"><div class="hstat-num" id="s-pend">0</div><div class="hstat-lbl">Pendientes</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <input type="text" id="search" class="search-box" placeholder="Buscar libro...">
+  <div class="filter-tabs">
+    <button class="ftab active" data-filter="all">Todos</button>
+    <button class="ftab" data-filter="done">Leídos</button>
+    <button class="ftab" data-filter="pend">Pendientes</button>
+  </div>
+  <button class="add-btn" id="add-btn"><i class="fas fa-plus"></i> Agregar</button>
+</div>
+
+<div class="items-grid" id="grid"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <span style="font-size:13px;font-weight:700;color:var(--text2)" id="m-num">#</span>
+      <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-tabs">
+      <button class="mtab active" data-tab="view">Ver</button>
+      <button class="mtab" data-tab="edit">Editar</button>
+    </div>
+    <!-- VIEW -->
+    <div id="tab-view" class="modal-body">
+      <img id="v-cover" class="view-cover" style="display:none">
+      <div id="v-cover-ph" class="view-cover-ph"><i class="fas fa-book-open"></i></div>
+      <div class="modal-title" id="v-title"></div>
+      <div class="modal-sub" id="v-sub"></div>
+      <div class="section-lbl" style="margin-top:0"><i class="fas fa-check-circle"></i> ¿Ya lo leíste?</div>
+      <div class="watch-toggle">
+        <span class="toggle-label" id="v-toggle-lbl">No leído</span>
+        <label class="toggle-wrap"><input type="checkbox" id="v-read"><span class="toggle-track"></span></label>
+      </div>
+      <div class="section-lbl"><i class="fas fa-star"></i> Rating</div>
+      <div class="stars-row" id="v-stars">
+        <button class="star-btn" data-s="1">★</button><button class="star-btn" data-s="2">★</button>
+        <button class="star-btn" data-s="3">★</button><button class="star-btn" data-s="4">★</button>
+        <button class="star-btn" data-s="5">★</button>
+      </div>
+      <div class="section-lbl"><i class="fas fa-comment"></i> Mi comentario</div>
+      <textarea class="finput" id="v-comment" placeholder="¿Qué te pareció?"></textarea>
+      <div class="form-actions">
+        <button class="btn-primary" id="save-btn"><i class="fas fa-save"></i> Guardar</button>
+      </div>
+    </div>
+    <!-- EDIT -->
+    <div id="tab-edit" class="modal-body" style="display:none">
+      <div class="fgroup">
+        <label class="flabel">Título</label>
+        <input type="text" id="e-title" class="finput" placeholder="Nombre del libro">
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Autor</label>
+        <input type="text" id="e-author" class="finput" placeholder="ej: Gabriel García Márquez">
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Año de publicación</label>
+        <input type="text" id="e-year" class="finput" placeholder="ej: 1967">
+      </div>
+      <div class="fgroup">
+        <label class="flabel">URL de portada (imagen)</label>
+        <input type="text" id="e-cover" class="finput" placeholder="https://...">
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" id="edit-save-btn"><i class="fas fa-save"></i> Guardar cambios</button>
+        <button class="btn-danger" id="delete-btn"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbygO21Gp_U2i2qaRV7L1-rXctzA6Cyn1eQlCfwF-5WZ6tzXpKYOcqiIb_5nKsiehcEpeQ/exec';
+const LS_KEY    = 'mcf_books_v1';
+const LS_TS     = 'mcf_books_ts';
+const LIST_TYPE = 'books';
+
+let items     = [];
+let filter    = 'all';
+let searchQ   = '';
+let openId    = null;
+let curTab    = 'view';
+let curRating = 0;
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function loadLocal() {
+  try { items = JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch(e) { items = []; }
+}
+
+function saveLocal() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(items)); } catch(e){}
+}
+
+function newId() {
+  return items.length ? Math.max(...items.map(i=>i.id||0))+1 : 1;
+}
+
+function starsHtml(r, small) {
+  const tag = small ? 'span' : 'button';
+  return [1,2,3,4,5].map(i => `<${tag} class="${small?'star-mini':'star-btn'}${i<=r?' on':''}"${small?'':` data-s="${i}"`}>★</${tag}>`).join('');
+}
+
+function render() {
+  const grid = document.getElementById('grid');
+  const q    = searchQ.toLowerCase();
+  let visible = items.filter(item => {
+    if (filter==='done' && !item.read) return false;
+    if (filter==='pend' && item.read)  return false;
+    if (q && !(item.title||'').toLowerCase().includes(q) && !(item.author||'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty"><i class="fas fa-book-open fa-3x" style="opacity:.3"></i><p style="margin-top:14px;font-size:16px">Tu lista de libros está vacía</p><button class="empty-add" onclick="openAddModal()"><i class="fas fa-plus"></i> Agregar primer libro</button></div>`;
+    updateStats(); return;
+  }
+  if (!visible.length) {
+    grid.innerHTML = '<div class="empty"><i class="fas fa-search fa-2x"></i><p style="margin-top:10px">Sin resultados</p></div>';
+    updateStats(); return;
+  }
+
+  grid.innerHTML = visible.map(item => `
+    <div class="item-card${item.read?' is-done':''}" data-id="${item.id}">
+      ${item.cover
+        ? `<img class="item-cover" src="${esc(item.cover)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        : ''}
+      <div class="item-cover-ph" style="${item.cover?'display:none':''}"><i class="fas fa-book-open"></i></div>
+      <div class="item-info">
+        <div class="item-title">${esc(item.title)}</div>
+        <div class="item-author">${esc(item.author||'')}${item.year?' · '+esc(item.year):''}</div>
+        <div class="item-footer">
+          <div class="stars-mini">${starsHtml(item.rating||0, true)}</div>
+          <span class="${item.read?'done-badge':'pend-badge'}">${item.read?'Leído':'Pendiente'}</span>
+        </div>
+      </div>
+    </div>`).join('');
+  updateStats();
+}
+
+function updateStats() {
+  const total = items.length, done = items.filter(i=>i.read).length;
+  const pct = total ? ((done/total)*100).toFixed(1) : 0;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-done').textContent  = done;
+  document.getElementById('s-pend').textContent  = total - done;
+  document.getElementById('prog-fill').style.width = `${pct}%`;
+  document.getElementById('prog-pct').textContent = `${pct}% leídos`;
+}
+
+function persist(item, isDelete) {
+  const ts = Date.now();
+  saveLocal(); localStorage.setItem(LS_TS, ts);
+  if (!APPS_SCRIPT_URL) return;
+  if (isDelete) {
+    const qs = new URLSearchParams({ action:'delete_item', type:LIST_TYPE, id:item.id, ts });
+    fetch(`${APPS_SCRIPT_URL}?${qs}`, { mode:'no-cors' }).catch(()=>{});
+  } else {
+    const qs = new URLSearchParams({ action:'save_item', type:LIST_TYPE, data:JSON.stringify(item), ts });
+    fetch(`${APPS_SCRIPT_URL}?${qs}`, { mode:'no-cors' }).catch(()=>{});
+  }
+}
+
+async function loadFromAppsScript() {
+  if (!APPS_SCRIPT_URL) return;
+  try {
+    const r    = await fetch(`${APPS_SCRIPT_URL}?type=${LIST_TYPE}`);
+    const resp = await r.json();
+    const sheetTs = resp.ts || 0;
+    const localTs = parseInt(localStorage.getItem(LS_TS)||'0');
+    if (sheetTs > localTs && Array.isArray(resp.items) && resp.items.length) {
+      items = resp.items;
+      saveLocal(); localStorage.setItem(LS_TS, sheetTs);
+    }
+  } catch(e) {}
+}
+
+/* ── MODAL ──────────────────────────────────────────────────── */
+function switchTab(tab) {
+  curTab = tab;
+  document.querySelectorAll('.mtab').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.getElementById('tab-view').style.display = tab==='view' ? 'block' : 'none';
+  document.getElementById('tab-edit').style.display = tab==='edit' ? 'block' : 'none';
+}
+
+function openModal(id) {
+  openId = id;
+  const item = items.find(i => i.id===id);
+  if (!item) return;
+  document.getElementById('m-num').textContent = `#${id}`;
+
+  const cover = item.cover || '';
+  const img = document.getElementById('v-cover');
+  const ph  = document.getElementById('v-cover-ph');
+  if (cover) { img.src=cover; img.style.display='block'; ph.style.display='none'; }
+  else { img.style.display='none'; ph.style.display='flex'; }
+  document.getElementById('v-title').textContent = item.title||'';
+  document.getElementById('v-sub').textContent   = [item.author, item.year].filter(Boolean).join(' · ');
+  document.getElementById('v-read').checked      = !!item.read;
+  document.getElementById('v-toggle-lbl').textContent = item.read ? '✅ Leído' : 'No leído';
+  document.getElementById('v-comment').value     = item.comment||'';
+  setStarUI(item.rating||0);
+
+  document.getElementById('e-title').value  = item.title||'';
+  document.getElementById('e-author').value = item.author||'';
+  document.getElementById('e-year').value   = item.year||'';
+  document.getElementById('e-cover').value  = item.cover||'';
+
+  document.getElementById('delete-btn').style.display = '';
+  switchTab('view');
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function openAddModal() {
+  openId = null;
+  document.getElementById('m-num').textContent = 'Nuevo libro';
+  document.getElementById('e-title').value = document.getElementById('e-author').value = document.getElementById('e-year').value = document.getElementById('e-cover').value = '';
+  document.getElementById('delete-btn').style.display = 'none';
+  switchTab('edit');
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  openId = null;
+}
+
+function setStarUI(r) {
+  curRating = r;
+  document.querySelectorAll('#v-stars .star-btn').forEach(b => b.classList.toggle('on', +b.dataset.s<=r));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ── EVENTS ─────────────────────────────────────────────────── */
+document.getElementById('grid').addEventListener('click', e => {
+  const card = e.target.closest('.item-card');
+  if (card) openModal(+card.dataset.id);
+});
+
+document.querySelectorAll('.mtab').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+document.getElementById('overlay').addEventListener('click', e => { if(e.target===document.getElementById('overlay')) closeModal(); });
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('add-btn').addEventListener('click', openAddModal);
+document.querySelectorAll('.ftab').forEach(b => b.addEventListener('click', () => {
+  filter = b.dataset.filter;
+  document.querySelectorAll('.ftab').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); render();
+}));
+document.getElementById('search').addEventListener('input', e => { searchQ=e.target.value; render(); });
+document.getElementById('v-read').addEventListener('change', e => {
+  document.getElementById('v-toggle-lbl').textContent = e.target.checked ? '✅ Leído' : 'No leído';
+});
+document.getElementById('v-stars').addEventListener('click', e => {
+  const btn = e.target.closest('.star-btn');
+  if (btn) setStarUI(curRating===+btn.dataset.s ? 0 : +btn.dataset.s);
+});
+
+document.getElementById('save-btn').addEventListener('click', () => {
+  if (!openId) return;
+  const item = items.find(i=>i.id===openId);
+  if (!item) return;
+  item.read    = document.getElementById('v-read').checked;
+  item.rating  = curRating;
+  item.comment = document.getElementById('v-comment').value.trim();
+  persist(item); render(); closeModal();
+  showToast(item.read ? '✅ Marcado como leído' : '💾 Guardado');
+});
+
+document.getElementById('edit-save-btn').addEventListener('click', () => {
+  const title = document.getElementById('e-title').value.trim();
+  if (!title) { alert('Ingresa el título'); return; }
+  if (openId) {
+    const item = items.find(i=>i.id===openId);
+    if (item) {
+      item.title  = title;
+      item.author = document.getElementById('e-author').value.trim();
+      item.year   = document.getElementById('e-year').value.trim();
+      item.cover  = document.getElementById('e-cover').value.trim();
+      persist(item);
+    }
+  } else {
+    const item = { id:newId(), title, author:document.getElementById('e-author').value.trim(), year:document.getElementById('e-year').value.trim(), cover:document.getElementById('e-cover').value.trim(), read:false, rating:0, comment:'' };
+    items.push(item);
+    persist(item);
+  }
+  render(); closeModal();
+  showToast(openId ? '✅ Actualizado' : '✅ Libro agregado');
+});
+
+document.getElementById('delete-btn').addEventListener('click', () => {
+  if (!openId || !confirm('¿Eliminar este libro?')) return;
+  const item = items.find(i=>i.id===openId);
+  items = items.filter(i=>i.id!==openId);
+  persist(item, true); render(); closeModal();
+  showToast('🗑️ Eliminado');
+});
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+async function init() {
+  loadLocal(); render();
+  await loadFromAppsScript();
+  render();
+}
+init();
+</script>
+</body>
+</html>

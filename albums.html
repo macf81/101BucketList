@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Álbumes • Mario</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --blue:#3b82f6; --green:#22c55e; --orange:#f97316; --red:#ef4444; --purple:#a855f7;
+      --green-bg:#f0fdf4; --orange-bg:#fff7ed; --blue-bg:#eff6ff;
+      --text:#111827; --text2:#6b7280; --border:#e5e7eb;
+      --card:#ffffff; --bg:#f9fafb;
+      --gradient:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+      --shadow-sm:0 1px 3px rgba(0,0,0,.08); --shadow:0 4px 16px rgba(0,0,0,.10);
+    }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); }
+
+    /* ── SITE NAV ───────────────────────────────────────── */
+    .site-nav { background:var(--card); border-bottom:1px solid var(--border); display:flex; justify-content:center; overflow-x:auto; scrollbar-width:none; position:sticky; top:0; z-index:200; box-shadow:var(--shadow-sm); }
+    .site-nav::-webkit-scrollbar { display:none; }
+    .site-nav a { padding:10px 20px; text-decoration:none; color:var(--text2); font-size:13px; font-weight:600; border-bottom:2px solid transparent; white-space:nowrap; transition:all .15s; display:flex; align-items:center; gap:6px; }
+    .site-nav a:hover { color:var(--text); background:var(--bg); }
+    .site-nav a.active { color:var(--blue); border-bottom-color:var(--blue); }
+
+    /* ── PAGE HEADER ────────────────────────────────────── */
+    .page-header { background:var(--card); border-bottom:1px solid var(--border); }
+    .header-cover { background:var(--gradient); height:18px; }
+    .header-inner { max-width:980px; margin:0 auto; padding:16px 20px 14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+    .header-title { font-size:22px; font-weight:800; display:flex; align-items:center; gap:10px; }
+    .header-stats { display:flex; gap:24px; }
+    .hstat { text-align:center; }
+    .hstat-num { font-size:22px; font-weight:800; line-height:1; }
+    .hstat-lbl { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; }
+    .hstat.done .hstat-num { color:var(--green); }
+    .hstat.pend .hstat-num { color:var(--orange); }
+    .prog-bar { height:4px; background:var(--border); border-radius:2px; margin-top:10px; }
+    .prog-fill { height:100%; background:var(--green); border-radius:2px; transition:width .4s; }
+    .prog-pct { font-size:12px; color:var(--text2); margin-top:4px; }
+
+    /* ── TOOLBAR ────────────────────────────────────────── */
+    .toolbar { max-width:980px; margin:0 auto; padding:14px 20px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .search-box { flex:1; min-width:200px; padding:8px 14px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:var(--card); outline:none; }
+    .search-box:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+    .filter-tabs { display:flex; gap:6px; flex-wrap:wrap; }
+    .ftab { padding:7px 14px; border-radius:20px; border:1px solid var(--border); background:var(--card); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; color:var(--text2); }
+    .ftab:hover { border-color:var(--blue); color:var(--blue); }
+    .ftab.active { background:var(--text); color:#fff; border-color:var(--text); }
+    .genre-select { padding:7px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px; background:var(--card); color:var(--text); cursor:pointer; }
+
+    /* ── GRID ───────────────────────────────────────────── */
+    .albums-grid { max-width:980px; margin:0 auto; padding:0 20px 60px; display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:16px; }
+    .album-card { background:var(--card); border-radius:12px; border:1px solid var(--border); overflow:hidden; cursor:pointer; transition:all .2s; box-shadow:var(--shadow-sm); }
+    .album-card:hover { transform:translateY(-3px); box-shadow:var(--shadow); }
+    .album-card.is-done { border-color:rgba(34,197,94,.35); }
+    .album-cover { width:100%; aspect-ratio:1; object-fit:cover; background:var(--border); display:block; }
+    .album-cover-placeholder { width:100%; aspect-ratio:1; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.6); font-size:36px; }
+    .album-info { padding:10px 12px 12px; }
+    .album-title { font-size:13px; font-weight:700; line-height:1.3; margin-bottom:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .album-artist { font-size:12px; color:var(--text2); margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .album-footer { display:flex; align-items:center; justify-content:space-between; }
+    .stars-mini { display:flex; gap:1px; }
+    .star-mini { font-size:11px; color:#d1d5db; }
+    .star-mini.on { color:#f59e0b; }
+    .done-badge { font-size:11px; font-weight:600; padding:2px 7px; border-radius:10px; background:var(--green-bg); color:var(--green); }
+    .pend-badge { font-size:11px; font-weight:600; padding:2px 7px; border-radius:10px; background:var(--orange-bg); color:var(--orange); }
+    .empty { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--text2); }
+
+    /* ── MODAL ──────────────────────────────────────────── */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:300; align-items:flex-end; justify-content:center; padding:0; }
+    .overlay.open { display:flex; }
+    @media(min-width:600px){ .overlay { align-items:center; padding:20px; } }
+    .modal { background:var(--card); border-radius:20px 20px 0 0; width:100%; max-width:560px; max-height:92vh; overflow-y:auto; box-shadow:0 -4px 40px rgba(0,0,0,.2); display:flex; flex-direction:column; }
+    @media(min-width:600px){ .modal { border-radius:20px; } }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 0; }
+    .modal-num { font-size:13px; font-weight:700; color:var(--text2); background:var(--bg); padding:3px 10px; border-radius:20px; }
+    .modal-close { width:32px; height:32px; border:none; background:var(--bg); border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text2); font-size:16px; }
+    .modal-cover { width:100%; aspect-ratio:1; object-fit:cover; max-height:300px; }
+    .modal-cover-placeholder { width:100%; aspect-ratio:1; max-height:300px; background:linear-gradient(135deg,#667eea,#764ba2); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.5); font-size:80px; }
+    .modal-body { padding:18px 20px 24px; }
+    .modal-title { font-size:22px; font-weight:800; line-height:1.3; margin-bottom:4px; }
+    .modal-meta { font-size:14px; color:var(--text2); margin-bottom:14px; }
+    .modal-genre { display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--blue); background:var(--blue-bg); padding:3px 8px; border-radius:10px; margin-bottom:10px; }
+    .modal-desc { font-size:14px; color:var(--text2); line-height:1.6; margin-bottom:16px; font-style:italic; }
+    .section-lbl { font-size:11px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; display:flex; align-items:center; gap:5px; }
+
+    .listen-toggle { display:flex; align-items:center; justify-content:space-between; background:var(--bg); border-radius:10px; padding:12px 16px; margin-bottom:14px; }
+    .toggle-label { font-size:14px; font-weight:600; }
+    .toggle-wrap { position:relative; display:inline-block; width:44px; height:24px; cursor:pointer; }
+    .toggle-wrap input { opacity:0; width:0; height:0; }
+    .toggle-track { position:absolute; inset:0; background:#d1d5db; border-radius:12px; transition:.3s; }
+    .toggle-wrap input:checked + .toggle-track { background:var(--green); }
+    .toggle-track::after { content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; background:#fff; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+    .toggle-wrap input:checked + .toggle-track::after { left:22px; }
+
+    .stars-row { display:flex; gap:6px; margin-bottom:14px; }
+    .star-btn { font-size:28px; color:#d1d5db; cursor:pointer; transition:color .1s; background:none; border:none; padding:0; line-height:1; }
+    .star-btn.on { color:#f59e0b; }
+    .star-btn:hover { color:#f59e0b; }
+
+    .comment-area { width:100%; border:1px solid var(--border); border-radius:10px; padding:12px; font-size:14px; font-family:inherit; resize:vertical; min-height:90px; outline:none; color:var(--text); }
+    .comment-area:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+    .save-btn { width:100%; margin-top:14px; padding:13px; background:var(--text); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; transition:opacity .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .save-btn:hover { opacity:.85; }
+
+    .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#1f2937; color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:500; z-index:999; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; }
+    .toast.show { opacity:1; }
+  </style>
+</head>
+<body>
+
+<!-- ── SITE NAV ──────────────────────────────────────────────── -->
+<nav class="site-nav">
+  <a href="index.html">🎯 101 Cosas</a>
+  <a href="albums.html" class="active">🎵 Álbumes</a>
+  <a href="movies.html">🎬 Películas</a>
+  <a href="books.html">📚 Libros</a>
+</nav>
+
+<!-- ── PAGE HEADER ───────────────────────────────────────────── -->
+<div class="page-header">
+  <div class="header-cover"></div>
+  <div class="header-inner">
+    <div>
+      <div class="header-title">🎵 Álbumes que escuchar antes de morir</div>
+      <div class="prog-bar" style="max-width:300px"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="prog-pct" id="prog-pct">0% escuchado</div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num" id="s-total">—</div><div class="hstat-lbl">Total</div></div>
+      <div class="hstat done"><div class="hstat-num" id="s-done">—</div><div class="hstat-lbl">Escuchados</div></div>
+      <div class="hstat pend"><div class="hstat-num" id="s-pend">—</div><div class="hstat-lbl">Pendientes</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOOLBAR ───────────────────────────────────────────────── -->
+<div class="toolbar">
+  <input type="text" id="search" class="search-box" placeholder="Buscar álbum o artista...">
+  <div class="filter-tabs">
+    <button class="ftab active" data-filter="all">Todos</button>
+    <button class="ftab" data-filter="done">Escuchados</button>
+    <button class="ftab" data-filter="pend">Pendientes</button>
+  </div>
+  <select class="genre-select" id="genre-select">
+    <option value="">Todos los géneros</option>
+  </select>
+</div>
+
+<!-- ── GRID ─────────────────────────────────────────────────── -->
+<div class="albums-grid" id="grid"></div>
+
+<!-- ── MODAL ────────────────────────────────────────────────── -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <span class="modal-num" id="m-num">#1</span>
+      <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+    </div>
+    <img class="modal-cover" id="m-cover" style="display:none">
+    <div class="modal-cover-placeholder" id="m-cover-ph"><i class="fas fa-compact-disc"></i></div>
+    <div class="modal-body">
+      <div class="modal-genre" id="m-genre"></div>
+      <div class="modal-title" id="m-title"></div>
+      <div class="modal-meta" id="m-meta"></div>
+      <div class="modal-desc" id="m-desc"></div>
+
+      <div class="section-lbl"><i class="fas fa-headphones"></i> ¿Ya lo escuchaste?</div>
+      <div class="listen-toggle">
+        <span class="toggle-label" id="toggle-lbl">No escuchado</span>
+        <label class="toggle-wrap"><input type="checkbox" id="m-listened"><span class="toggle-track"></span></label>
+      </div>
+
+      <div class="section-lbl"><i class="fas fa-star"></i> Rating</div>
+      <div class="stars-row" id="stars-row">
+        <button class="star-btn" data-s="1">★</button>
+        <button class="star-btn" data-s="2">★</button>
+        <button class="star-btn" data-s="3">★</button>
+        <button class="star-btn" data-s="4">★</button>
+        <button class="star-btn" data-s="5">★</button>
+      </div>
+
+      <div class="section-lbl"><i class="fas fa-comment"></i> Mi comentario</div>
+      <textarea class="comment-area" id="m-comment" placeholder="¿Qué te pareció? ¿Canciones favoritas?"></textarea>
+
+      <button class="save-btn" id="save-btn"><i class="fas fa-save"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbygO21Gp_U2i2qaRV7L1-rXctzA6Cyn1eQlCfwF-5WZ6tzXpKYOcqiIb_5nKsiehcEpeQ/exec';
+const LS_KEY    = 'mcf_albums_v1';
+const COVER_KEY = 'mcf_covers_v1';
+const LIST_TYPE = 'albums';
+
+/* ── ALBUM DATA ─────────────────────────────────────────────── */
+const ALBUMS = [
+  // ── LOS INAMOVIBLES ──
+  {id:1,  t:'Revolver',                                    a:'The Beatles',               y:1966, g:'Los Inamovibles',         d:'El momento en que la música pop se convirtió en arte. Cambió todo lo que vino después.'},
+  {id:2,  t:"Sgt. Pepper's Lonely Hearts Club Band",       a:'The Beatles',               y:1967, g:'Los Inamovibles',         d:'El primer álbum concebido como obra total. Antes y después en la historia de la música.'},
+  {id:3,  t:'Rubber Soul',                                 a:'The Beatles',               y:1965, g:'Los Inamovibles',         d:'El primer álbum donde The Beatles mostraron profundidad lírica real. El punto de quiebre.'},
+  {id:4,  t:'Pet Sounds',                                  a:'The Beach Boys',            y:1966, g:'Los Inamovibles',         d:'Brian Wilson encerrado en su cuarto, inventando la producción moderna. Obra maestra pura.'},
+  {id:5,  t:'Highway 61 Revisited',                        a:'Bob Dylan',                 y:1965, g:'Los Inamovibles',         d:'Cuando la poesía más ambiciosa encontró la guitarra eléctrica. Dylan redefinió el rock.'},
+  {id:6,  t:"The Freewheelin' Bob Dylan",                  a:'Bob Dylan',                 y:1963, g:'Los Inamovibles',         d:"El Dylan más puro y político. 'Blowin' in the Wind' y 'A Hard Rain's A-Gonna Fall'. El folk protesta en su cima."},
+  {id:7,  t:"What's Going On",                             a:'Marvin Gaye',               y:1971, g:'Los Inamovibles',         d:'Soul como protesta social. Grabado como álbum conceptual cuando nadie hacía eso en soul.'},
+  {id:8,  t:'The Dark Side of the Moon',                   a:'Pink Floyd',                y:1973, g:'Los Inamovibles',         d:'Tiempo, dinero, locura, muerte. Estuvo 14 años en el Billboard.'},
+  {id:9,  t:'OK Computer',                                 a:'Radiohead',                 y:1997, g:'Los Inamovibles',         d:'La alienación del mundo digital antes de que existiera el mundo digital. Profética.'},
+  {id:10, t:'Led Zeppelin IV',                             a:'Led Zeppelin',              y:1971, g:'Los Inamovibles',         d:"Cuatro músicos en la cima de su poder. 'Stairway to Heaven' es solo la punta del iceberg."},
+  {id:11, t:'Led Zeppelin I',                              a:'Led Zeppelin',              y:1969, g:'Los Inamovibles',         d:'El debut que inventó el hard rock. Grabado en 36 horas. Crudo, poderoso e irrepetible.'},
+  {id:12, t:'Exile on Main St.',                           a:'The Rolling Stones',        y:1972, g:'Los Inamovibles',         d:'Grabada en una villa francesa huyendo de impuestos. Sucia, gloriosa, inagotable.'},
+  {id:13, t:'The Velvet Underground & Nico',               a:'The Velvet Underground',    y:1967, g:'Los Inamovibles',         d:'Solo 30,000 copias vendidas — pero todos los que la compraron empezaron una banda.'},
+  {id:14, t:'Horses',                                      a:'Patti Smith',               y:1975, g:'Los Inamovibles',         d:'Punk y poesía fusionados antes de que existiera el punk. El debut más influyente de los 70.'},
+  {id:15, t:'The Great Twenty-Eight',                      a:'Chuck Berry',               y:1982, g:'Los Inamovibles',         d:'La compilación definitiva del padre del rock and roll. Sin Chuck Berry, no hay Beatles, Stones ni nada.'},
+  // ── ROCK CLÁSICO INDISPENSABLE ──
+  {id:16, t:'Electric Ladyland',                           a:'Jimi Hendrix',              y:1968, g:'Rock Clásico',            d:'Hendrix expandiendo el rock hacia el cosmos. Su obra más ambiciosa y libre.'},
+  {id:17, t:'The Doors',                                   a:'The Doors',                 y:1967, g:'Rock Clásico',            d:'Jim Morrison convirtió el rock en teatro oscuro. Debut que no envejeció ni un día.'},
+  {id:18, t:'The Rise and Fall of Ziggy Stardust',         a:'David Bowie',               y:1972, g:'Rock Clásico',            d:'Bowie inventó un alter ego alienígena y con él reinventó el glam rock y la identidad en música.'},
+  {id:19, t:'Heroes',                                      a:'David Bowie',               y:1977, g:'Rock Clásico',            d:'La cima de la trilogía de Berlín con Brian Eno. Art rock en su forma más emotiva.'},
+  {id:20, t:'Harvest',                                     a:'Neil Young',                y:1972, g:'Rock Clásico',            d:'Country-folk de una intimidad devastadora. Grabado en un granero con la espalda vendada.'},
+  {id:21, t:'Rumours',                                     a:'Fleetwood Mac',             y:1977, g:'Rock Clásico',            d:'Toda la banda rompiendo con sus parejas mientras grababa. El dolor convertido en pop perfecto.'},
+  {id:22, t:'Hotel California',                            a:'Eagles',                    y:1976, g:'Rock Clásico',            d:'El reverso oscuro del sueño americano. Los solos de guitarra final son imbatibles.'},
+  {id:23, t:'Bridge Over Troubled Water',                  a:'Simon & Garfunkel',         y:1970, g:'Rock Clásico',            d:'El folk-pop en su cima. Grabado mientras la sociedad entre ellos se desmoronaba.'},
+  {id:24, t:'The Queen Is Dead',                           a:'The Smiths',                y:1986, g:'Rock Clásico',            d:'Morrissey y Marr en su mejor momento. Tristeza británica hecha himno.'},
+  {id:25, t:'Remain in Light',                             a:'Talking Heads',             y:1980, g:'Rock Clásico',            d:'Brian Eno + David Byrne + ritmos africanos = el funk más inteligente de la historia.'},
+  {id:26, t:'Wish You Were Here',                          a:'Pink Floyd',                y:1975, g:'Rock Clásico',            d:'Un álbum de homenaje a Syd Barrett. Melancolía y amistad perdida en forma de música.'},
+  {id:27, t:'The White Album',                             a:'The Beatles',               y:1968, g:'Rock Clásico',            d:'Cuatro músicos separándose — y en el proceso crearon un universo de 30 canciones.'},
+  {id:28, t:'Parallel Lines',                              a:'Blondie',                   y:1978, g:'Rock Clásico',            d:"El punk de CBGB encontró el pop radio-friendly. Debbie Harry en estado de gracia."},
+  {id:29, t:'Saturday Night Fever',                        a:'Bee Gees',                  y:1977, g:'Rock Clásico',            d:'La BSO que definió la disco. Los Bee Gees en su cima absoluta.'},
+  // ── ROCK ALTERNATIVO & INDIE ──
+  {id:30, t:'Nevermind',                                   a:'Nirvana',                   y:1991, g:'Rock Alternativo',        d:'El momento en que el underground destruyó el mainstream. Una catarsis generacional.'},
+  {id:31, t:'In Utero',                                    a:'Nirvana',                   y:1993, g:'Rock Alternativo',        d:'La reacción deliberada al éxito masivo de Nevermind. Steve Albini al frente. Más crudo, más honesto.'},
+  {id:32, t:'MTV Unplugged in New York',                   a:'Nirvana',                   y:1994, g:'Rock Alternativo',        d:'Grabado semanas antes de la muerte de Cobain. Voz y guitarra desnudas. Uno de los conciertos más emotivos jamás filmados.'},
+  {id:33, t:'Kid A',                                       a:'Radiohead',                 y:2000, g:'Rock Alternativo',        d:'Radiohead desmontó todo lo que era Radiohead y construyó algo completamente nuevo.'},
+  {id:34, t:'London Calling',                              a:'The Clash',                 y:1979, g:'Rock Alternativo',        d:'Punk que absorbió reggae, rockabilly y ska. La declaración política más musical del siglo.'},
+  {id:35, t:'The Joshua Tree',                             a:'U2',                        y:1987, g:'Rock Alternativo',        d:'Espiritualidad, política y grandeza épica. El álbum más ambicioso del rock irlandés.'},
+  {id:36, t:'Achtung Baby',                                a:'U2',                        y:1991, g:'Rock Alternativo',        d:"U2 deconstruyendo todo lo que era U2. Electrónico, irónico y más humano que nunca. 'One' es perfecta."},
+  {id:37, t:'Automatic for the People',                    a:'R.E.M.',                    y:1992, g:'Rock Alternativo',        d:'Sobre la pérdida, la muerte y el tiempo. La más oscura y hermosa de R.E.M.'},
+  {id:38, t:'Doolittle',                                   a:'Pixies',                    y:1989, g:'Rock Alternativo',        d:'Inventaron la dinámica quiet-loud que Nirvana copió. Extraño, violento y perfecto.'},
+  {id:39, t:'Funeral',                                     a:'Arcade Fire',               y:2004, g:'Rock Alternativo',        d:'Un álbum sobre la muerte de familiares, grabado mientras morían. Devastador y luminoso.'},
+  {id:40, t:'For Emma, Forever Ago',                       a:'Bon Iver',                  y:2007, g:'Rock Alternativo',        d:'Justin Vernon solo en una cabaña durante un invierno. Soledad vuelta belleza.'},
+  {id:41, t:'Appetite for Destruction',                    a:"Guns N' Roses",             y:1987, g:'Rock Alternativo',        d:"El debut más explosivo del hard rock. 'Welcome to the Jungle' y 'Sweet Child O' Mine' en el mismo disco."},
+  {id:42, t:'Is This It',                                  a:'The Strokes',               y:2001, g:'Rock Alternativo',        d:'El álbum que revivió el rock de guitarra en los 2000. Grabado con prisa y suena eterno.'},
+  {id:43, t:"(What's the Story) Morning Glory?",           a:'Oasis',                     y:1995, g:'Rock Alternativo',        d:"El pico del Britpop. Fue el álbum más vendido de 1995 en UK."},
+  {id:44, t:'A Rush of Blood to the Head',                 a:'Coldplay',                  y:2002, g:'Rock Alternativo',        d:"Su obra maestra. Grammy al Mejor Álbum. 'The Scientist' y 'Clocks' los pusieron en otra dimensión."},
+  {id:45, t:'Parachutes',                                  a:'Coldplay',                  y:2000, g:'Rock Alternativo',        d:"El debut que los lanzó con 'Yellow'. Íntimo, acústico y fresco."},
+  {id:46, t:'AM',                                          a:'Arctic Monkeys',            y:2013, g:'Rock Alternativo',        d:'El giro más maduro de Arctic Monkeys. Riffs de Josh Homme, atmósfera R&B y canciones perfectas.'},
+  {id:47, t:'Dookie',                                      a:'Green Day',                 y:1994, g:'Rock Alternativo',        d:'El punk-pop en su forma más pura y divertida. El álbum que llevó el punk underground al mainstream.'},
+  {id:48, t:'Elephant',                                    a:'The White Stripes',         y:2003, g:'Rock Alternativo',        d:"Solo guitarra, batería y voz — y suena más grande que cualquier banda de 5."},
+  {id:49, t:"If You're Feeling Sinister",                  a:'Belle and Sebastian',       y:1996, g:'Rock Alternativo',        d:'Indie pop escocés de una delicadeza y melancolía perfectas.'},
+  {id:50, t:'The Score',                                   a:'Fugees',                    y:1996, g:'Rock Alternativo',        d:"Hip-hop, soul y reggae fusionados con una habilidad única. 'Killing Me Softly' los catapultó al mundo entero."},
+  // ── SOUL, R&B & POP ──
+  {id:51, t:'I Never Loved a Man the Way I Love You',      a:'Aretha Franklin',           y:1967, g:'Soul, R&B & Pop',         d:'La llegada de la Reina del Soul. Poder, libertad y autoridad emocional en estado puro.'},
+  {id:52, t:'Innervisions',                                a:'Stevie Wonder',             y:1973, g:'Soul, R&B & Pop',         d:'El Stevie más político y espiritual. Grabado mientras estaba en coma tras un accidente.'},
+  {id:53, t:'The Miseducation of Lauryn Hill',             a:'Lauryn Hill',               y:1998, g:'Soul, R&B & Pop',         d:'Hip-hop, soul y reggae fusionados en una carta de amor y desamor al mundo.'},
+  {id:54, t:'Purple Rain',                                 a:'Prince',                    y:1984, g:'Soul, R&B & Pop',         d:'Un hombre que no dormía durante semanas seguidas, inventando géneros nuevos a solas.'},
+  {id:55, t:'Thriller',                                    a:'Michael Jackson',           y:1982, g:'Soul, R&B & Pop',         d:'El álbum más vendido de la historia. Y lo justifica. Producción de otro planeta.'},
+  {id:56, t:'Tapestry',                                    a:'Carole King',               y:1971, g:'Soul, R&B & Pop',         d:'Singer-songwriter pop en su forma más íntima y duradera. Estuvo 6 años en charts.'},
+  {id:57, t:'21',                                          a:'Adele',                     y:2011, g:'Soul, R&B & Pop',         d:'El álbum de ruptura más vendido del siglo XXI. Voz extraordinaria sobre un dolor muy ordinario.'},
+  {id:58, t:'The Immaculate Collection',                   a:'Madonna',                   y:1990, g:'Soul, R&B & Pop',         d:'La mejor compilación del pop de los 80. 17 hits que definen una era.'},
+  {id:59, t:'The Definitive Collection',                   a:'ABBA',                      y:2001, g:'Soul, R&B & Pop',         d:'La colección definitiva del grupo sueco más influyente de la historia del pop.'},
+  {id:60, t:'Come On Over',                                a:'Shania Twain',              y:1997, g:'Soul, R&B & Pop',         d:'El álbum más vendido por una artista femenina de todos los tiempos.'},
+  {id:61, t:'Tracy Chapman',                               a:'Tracy Chapman',             y:1988, g:'Soul, R&B & Pop',         d:"Debut de folk-soul con una urgencia social y emocional única. 'Fast Car' sigue siendo perfecta."},
+  {id:62, t:'Folklore',                                    a:'Taylor Swift',              y:2020, g:'Soul, R&B & Pop',         d:'Su obra más artística: indie folk grabado en cuarentena. Narrativa y producción de otro nivel.'},
+  {id:63, t:'1989',                                        a:'Taylor Swift',              y:2014, g:'Soul, R&B & Pop',         d:"Su salto total al pop. El álbum más influyente del pop de los 2010s."},
+  // ── JAZZ ──
+  {id:64, t:'Kind of Blue',                                a:'Miles Davis',               y:1959, g:'Jazz',                    d:'El álbum de jazz más importante jamás grabado. Modal, meditativo, eterno.'},
+  {id:65, t:'A Love Supreme',                              a:'John Coltrane',             y:1965, g:'Jazz',                    d:'Jazz como acto de devoción espiritual. Cuatro movimientos: resolución, presentación, alabanza, salmo.'},
+  {id:66, t:'In a Silent Way',                             a:'Miles Davis',               y:1969, g:'Jazz',                    d:'Ambient antes de que existiera el ambient. Música entre el sueño y la vigilia.'},
+  // ── FOLK, PUNK & ROCK PRIMITIVO ──
+  {id:67, t:'Blood on the Tracks',                         a:'Bob Dylan',                 y:1975, g:'Folk & Punk',             d:'Dylan procesando su divorcio. La más personal — y posiblemente la mejor — de su carrera.'},
+  {id:68, t:'Blue',                                        a:'Joni Mitchell',             y:1971, g:'Folk & Punk',             d:'El álbum más vulnerable de la música popular. Pura honestidad convertida en arte.'},
+  {id:69, t:'Graceland',                                   a:'Paul Simon',                y:1986, g:'Folk & Punk',             d:'Grabado en Sudáfrica durante el apartheid, con músicos locales que cambiaron el mundo.'},
+  {id:70, t:'Ramones',                                     a:'Ramones',                   y:1976, g:'Folk & Punk',             d:'El debut que inventó el punk. 14 canciones en 29 minutos. Veloz, simple y absolutamente revolucionario.'},
+  {id:71, t:'Never Mind the Bollocks',                     a:'Sex Pistols',               y:1977, g:'Folk & Punk',             d:'El único álbum de los Pistols. Grabado con más rigor del que su imagen sugería.'},
+  {id:72, t:'Disintegration',                              a:'The Cure',                  y:1989, g:'Folk & Punk',             d:'Robert Smith en su punto más vulnerable. El gran álbum de la melancolía pop.'},
+  {id:73, t:'Tidal',                                       a:'Fiona Apple',               y:1996, g:'Folk & Punk',             d:'Debut grabado sin click track a los 18 años. Piano, jazz y honestidad emocional devastadora.'},
+  {id:74, t:'When the Pawn...',                            a:'Fiona Apple',               y:1999, g:'Folk & Punk',             d:'Más arriesgada que Tidal. Una de las mentes más originales del pop.'},
+  // ── WORLD MUSIC ──
+  {id:75, t:'Buena Vista Social Club',                     a:'Buena Vista Social Club',   y:1997, g:'World Music',             d:'Músicos cubanos viejos que tocan como si el tiempo no importara. Sobre dignidad y alegría.'},
+  {id:76, t:'Exodus',                                      a:'Bob Marley & The Wailers',  y:1977, g:'World Music',             d:'Reggae como filosofía de vida. Grabado en Londres exiliado tras un intento de asesinato.'},
+  {id:77, t:'Clandestino',                                 a:'Manu Chao',                 y:1998, g:'World Music',             d:'Multilingüe, polirrítmico y políticamente furioso. El sonido de América Latina y el mundo migrante.'},
+  // ── HIP-HOP ──
+  {id:78, t:'To Pimp a Butterfly',                         a:'Kendrick Lamar',            y:2015, g:'Hip-Hop',                 d:'El hip-hop más complejo del siglo XXI. Jazz, funk y poesía sobre la identidad negra en América.'},
+  {id:79, t:'The Score',                                   a:'Fugees',                    y:1996, g:'Hip-Hop',                 d:"Hip-hop, soul y reggae fusionados con una habilidad única."},
+  // ── ROCK EN ESPAÑOL ──
+  {id:80, t:'Ré',                                          a:'Café Tacvba',               y:1994, g:'Rock en Español',         d:'El #1 de Rolling Stone en rock latino. Un mosaico de géneros que redefinió la música en español.'},
+  {id:81, t:'Bocanada',                                    a:'Gustavo Cerati',            y:1999, g:'Rock en Español',         d:'Cerati solista en su cima. Electrónica, pop y melancolía perfectamente equilibrados.'},
+  {id:82, t:'Canción Animal',                              a:'Soda Stereo',               y:1990, g:'Rock en Español',         d:'El mejor Soda Stereo. Rock maduro, íntimo y poderoso. La consagración definitiva.'},
+  {id:83, t:'Clics Modernos',                              a:'Charly García',             y:1983, g:'Rock en Español',         d:'Synthpop grabado en NYC en plena dictadura argentina. El más moderno y audaz de Charly.'},
+  {id:84, t:'La Pipa de la Paz',                           a:'Aterciopelados',            y:1996, g:'Rock en Español',         d:'Rock colombiano mezclando folklore latinoamericano con guitarra distorsionada. Inigualable.'},
+  {id:85, t:'El Amor Después del Amor',                    a:'Fito Páez',                 y:1992, g:'Rock en Español',         d:'El disco de rock en español más vendido de todos los tiempos. Luminoso y desbordante.'},
+  {id:86, t:'Fabulosos Calavera',                          a:'Los Fabulosos Cadillacs',   y:1997, g:'Rock en Español',         d:'Ska, reggae y rock argentino mezclados con una energía arrolladora. Fiesta y política.'},
+  {id:87, t:'El Silencio',                                 a:'Caifanes',                  y:1992, g:'Rock en Español',         d:'El rock mexicano en su mejor momento. Oscuro, elegante y profundamente latinoamericano.'},
+  {id:88, t:'¿Dónde Jugarán las Niñas?',                   a:'Molotov',                   y:1997, g:'Rock en Español',         d:'Rap-rock furioso, prohibido en tiendas mexicanas. La rebeldía en su forma más pura.'},
+  {id:89, t:'Jessico',                                     a:'Babasónicos',               y:2001, g:'Rock en Español',         d:'Rock argentino experimental y sexy. Uno de los álbumes más originales del continente.'},
+  {id:90, t:'Corazones',                                   a:'Los Prisioneros',           y:1990, g:'Rock en Español',         d:'Los Prisioneros chilenos en su punto cumbre. Electrónico, político y con ganchos inmortales.'},
+  {id:91, t:'Hasta la Raíz',                               a:'Natalia Lafourcade',        y:2015, g:'Rock en Español',         d:'Raíces latinoamericanas reimaginadas con delicadeza y profundidad. Reconocimiento mundial.'},
+  {id:92, t:"Dónde Están los Ladrones?",                   a:'Shakira',                   y:1998, g:'Rock en Español',         d:'El momento en que Shakira se convirtió en artista global. Rock en español con producción de primer nivel.'},
+  // ── ELECTRÓNICA ──
+  {id:93, t:'Demon Days',                                  a:'Gorillaz',                  y:2005, g:'Electrónica',             d:"La cima de Gorillaz. Post-apocalíptico y catchy a la vez."},
+  {id:94, t:'Gorillaz',                                    a:'Gorillaz',                  y:2001, g:'Electrónica',             d:"El debut que entró al Guinness como banda virtual más exitosa."},
+  // ── METAL ──
+  {id:95,  t:'Paranoid',                                   a:'Black Sabbath',             y:1970, g:'Metal & Rock Pesado',     d:"Inventaron el heavy metal en Birmingham. 'Iron Man' y 'War Pigs' son cimientos del género."},
+  {id:96,  t:'Master of Puppets',                          a:'Metallica',                 y:1986, g:'Metal & Rock Pesado',     d:'El thrash metal en su cumbre artística. Complejo, agresivo y musicalmente impecable.'},
+  {id:97,  t:'Back in Black',                              a:'AC/DC',                     y:1980, g:'Metal & Rock Pesado',     d:'Grabado meses después de la muerte de Bon Scott. El rock más puro destilado a su esencia.'},
+  {id:98,  t:'Rage Against the Machine',                   a:'Rage Against the Machine',  y:1992, g:'Metal & Rock Pesado',     d:'Rap-metal político con una producción sobria y furiosa. Tan relevante hoy como en 1992.'},
+  {id:99,  t:'Toys in the Attic',                          a:'Aerosmith',                 y:1975, g:'Metal & Rock Pesado',     d:"El mejor Aerosmith según la crítica: crudo, sucio y lleno de energía."},
+  {id:100, t:'Rocks',                                      a:'Aerosmith',                 y:1976, g:'Metal & Rock Pesado',     d:'Más oscuro y agresivo que Toys. Para muchos fans hardcore, es el Aerosmith más verdadero.'},
+  {id:101, t:'Pump',                                       a:'Aerosmith',                 y:1989, g:'Metal & Rock Pesado',     d:'El mejor de su comeback. Más trabajado y con canciones que aguantan décadas.'},
+  {id:102, t:'Appetite for Destruction',                   a:"Guns N' Roses",             y:1987, g:'Metal & Rock Pesado',     d:"El debut más explosivo del hard rock."},
+  // ── CLÁSICOS ──
+  {id:103, t:'Goodbye Yellow Brick Road',                  a:'Elton John',                y:1973, g:'Clásicos',                d:'El Elton más completo: 17 canciones en 15 días. Teatral, glam y absolutamente memorable.'},
+  {id:104, t:'Transformer',                                a:'Lou Reed',                  y:1972, g:'Clásicos',                d:'Producido por Bowie y Mick Ronson. Nueva York oscura y brillante en un mismo álbum.'},
+  {id:105, t:'Abraxas',                                    a:'Santana',                   y:1970, g:'Clásicos',                d:"Afro-latin rock de una belleza que fluye. 'Oye Como Va' y 'Samba Pa Ti' son imbatibles."},
+  {id:106, t:'Back to Black',                              a:'Amy Winehouse',             y:2006, g:'Clásicos',                d:'Soul retro grabado con una urgencia visceral. Una de las voces más singulares del siglo.'},
+  {id:107, t:'Sound of Silver',                            a:'LCD Soundsystem',           y:2007, g:'Clásicos',                d:'Dance-punk con líricas sobre la nostalgia y el envejecimiento. Para escuchar en volumen alto.'},
+  {id:108, t:'Tabula Rasa',                                a:'Arvo Pärt',                 y:1977, g:'Clásicos',                d:'Minimalismo estonio que suena como si el mundo empezara de nuevo. Para el silencio interior.'},
+  {id:109, t:'Homogenic',                                  a:'Björk',                     y:1997, g:'Clásicos',                d:'Cuerdas de cámara + electrónica + la voz más singular del pop. Incomparable.'},
+  // ── TUS ARTISTAS ──
+  {id:110, t:'Look Sharp!',                                a:'Roxette',                   y:1988, g:'Mis Artistas',            d:"El debut que los lanzó al mundo. 'The Look' y 'Listen to Your Heart' en su forma más fresca."},
+  {id:111, t:'Joyride',                                    a:'Roxette',                   y:1991, g:'Mis Artistas',            d:'Su cima comercial y artística. Pop impecable con corazón de rock.'},
+  {id:112, t:'Jagged Little Pill',                         a:'Alanis Morissette',         y:1995, g:'Mis Artistas',            d:'Rabia, dolor y honestidad a velocidad de crucero. Debut que redefinió el rock alternativo femenino.'},
+  {id:113, t:'Supposed Former Infatuation Junkie',         a:'Alanis Morissette',         y:1998, g:'Mis Artistas',            d:"El sucesor olvidado. Más introspectivo y filosófico que Jagged. 'Thank U' es una de sus mejores canciones."},
+  {id:114, t:'Yourself or Someone Like You',               a:'Matchbox Twenty',           y:1996, g:'Mis Artistas',            d:"Debut que los puso en el mapa. Rock alternativo americano honesto y melódico."},
+  {id:115, t:'Mad Season',                                 a:'Matchbox Twenty',           y:2000, g:'Mis Artistas',            d:"El favorito de los fans más exigentes. Más maduro y texturizado."},
+  {id:116, t:'El Viaje de Copperpot',                      a:'La Oreja de Van Gogh',      y:2000, g:'Mis Artistas',            d:'El álbum más vendido de la historia de España. Pop-rock con letras que hablan de amor y tiempo.'},
+  {id:117, t:'Lo Que Te Conté Mientras Te Hacías la Dormida', a:'La Oreja de Van Gogh', y:2003, g:'Mis Artistas',            d:"Su consolidación. Tres singles #1. 'Rosas' y '20 de Enero' son himnos de una generación."},
+  {id:118, t:'Band on the Run',                            a:'Paul McCartney & Wings',    y:1973, g:'Mis Artistas',            d:'Grabado en Nigeria con medio grupo. Su obra maestra post-Beatles.'},
+  {id:119, t:'Ram',                                        a:'Paul McCartney',            y:1971, g:'Mis Artistas',            d:'El favorito de los críticos: íntimo, excéntrico y hermoso.'},
+  {id:120, t:'All Things Must Pass',                       a:'George Harrison',           y:1970, g:'Mis Artistas',            d:'Triple álbum grabado el año que murieron los Beatles. Una joya.'},
+  {id:121, t:'Living in the Material World',               a:'George Harrison',           y:1973, g:'Mis Artistas',            d:'Más contemplativo que All Things. Espiritualidad hinduista. Subestimado y profundo.'},
+  {id:122, t:'Plastic Ono Band',                           a:'John Lennon',               y:1970, g:'Mis Artistas',            d:'El más crudo y honesto de todos los ex-Beatles. Terapia primal convertida en rock. Desnudo y devastador.'},
+  {id:123, t:'Imagine',                                    a:'John Lennon',               y:1971, g:'Mis Artistas',            d:'El más accesible y político. La canción título es el himno pacifista del siglo XX.'},
+  {id:124, t:'Different Class',                            a:'Pulp',                      y:1995, g:'Mis Artistas',            d:"Britpop de clase trabajadora. Jarvis Cocker observando la sociedad inglesa con sarcasmo y ternura."},
+  {id:125, t:'This Is Hardcore',                           a:'Pulp',                      y:1998, g:'Mis Artistas',            d:'El disco más oscuro y arriesgado de Pulp. Sobre la fama, el sexo y el vacío.'},
+  {id:126, t:'Slippery When Wet',                          a:'Bon Jovi',                  y:1986, g:'Mis Artistas',            d:"El best-seller de 1987. 'Livin' on a Prayer' no necesita presentación."},
+  {id:127, t:'New Jersey',                                 a:'Bon Jovi',                  y:1988, g:'Mis Artistas',            d:"El seguimiento más completo y maduro. Más variado que Slippery."},
+  {id:128, t:'Alta Suciedad',                              a:'Andrés Calamaro',           y:1997, g:'Mis Artistas',            d:"El disco más icónico de Calamaro. Rock con groove, 'Flaca' y 'Estadio Azteca'. Su obra maestra."},
+  {id:129, t:'Honestidad Brutal',                          a:'Andrés Calamaro',           y:1999, g:'Mis Artistas',            d:"Álbum doble de 37 canciones grabado en plena crisis personal. Más oscuro y directo."},
+  {id:130, t:'La Flaca',                                   a:'Jarabe de Palo',            y:1996, g:'Mis Artistas',            d:"El debut que los convirtió en fenómeno global. Rock latino con flamenco y reggae."},
+  {id:131, t:'Depende',                                    a:'Jarabe de Palo',            y:1998, g:'Mis Artistas',            d:'El segundo disco consolida su sonido: pop-rock mediterráneo con hondura lírica.'},
+  {id:132, t:'Tragic Kingdom',                             a:'No Doubt',                  y:1995, g:'Mis Artistas',            d:"El disco que los lanzó al mundo con 'Don't Speak'. Ska-punk con pop melódico."},
+  {id:133, t:'Rock Steady',                                a:'No Doubt',                  y:2001, g:'Mis Artistas',            d:'Su regreso más arriesgado: dancehall y reggae grabados en Jamaica.'},
+  {id:134, t:'Night Visions',                              a:'Imagine Dragons',           y:2012, g:'Mis Artistas',            d:"El debut que los convirtió en fenómeno global. 'Radioactive' y 'Demons' dominaron las charts."},
+  {id:135, t:'Evolve',                                     a:'Imagine Dragons',           y:2017, g:'Mis Artistas',            d:"Su álbum más consistente post-debut. 'Believer', 'Thunder' y 'Whatever It Takes' en un mismo disco."},
+  {id:136, t:'Confesiones de Invierno',                    a:'Sui Generis',               y:1973, g:'Mis Artistas',            d:'El álbum más maduro de Charly García antes de La Máquina. Un clásico generacional.'},
+  {id:137, t:'Vida',                                       a:'Sui Generis',               y:1972, g:'Mis Artistas',            d:'El debut que inventó el rock argentino acústico. Fresco, íntimo y fundacional.'},
+  {id:138, t:'Unorthodox Jukebox',                         a:'Bruno Mars',                y:2012, g:'Mis Artistas',            d:"Su mejor disco: pop, funk, reggae y R&B mezclados con maestría. Grammy al Álbum del Año."},
+  {id:139, t:'24K Magic',                                  a:'Bruno Mars',                y:2016, g:'Mis Artistas',            d:'Homenaje al R&B y funk de los 90. Solo 33 minutos pero cada uno cuenta. Grammy al Álbum del Año.'},
+  {id:140, t:'19 Días y 500 Noches',                       a:'Joaquín Sabina',            y:1999, g:'Mis Artistas',            d:'Consenso unánime: su mejor disco. Voz rota, letras confesionales y sin filtros. Definitivo.'},
+  {id:141, t:'Física y Química',                           a:'Joaquín Sabina',            y:1992, g:'Mis Artistas',            d:"Su disco más accesible y completo. 'Y nos dieron las diez' es un himno."},
+];
+
+/* ── STATE ──────────────────────────────────────────────────── */
+const LS_TS = 'mcf_albums_ts';
+let userState = {}; // id → { listened, rating, comment }
+let filter    = 'all';
+let genre     = '';
+let searchQ   = '';
+let openId    = null;
+let covers    = {};
+const observer = new IntersectionObserver(onVisible, { rootMargin:'200px' });
+
+function loadLocal() {
+  try { userState = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { userState = {}; }
+  try { covers    = JSON.parse(localStorage.getItem(COVER_KEY) || '{}'); } catch(e) { covers = {}; }
+}
+
+function stateOf(id) {
+  return userState[id] || { listened:false, rating:0, comment:'' };
+}
+
+/* ── COVERS (iTunes API) ────────────────────────────────────── */
+function onVisible(entries) {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const card = entry.target;
+    const id   = +card.dataset.id;
+    const alb  = ALBUMS.find(a => a.id === id);
+    if (!alb) return;
+    observer.unobserve(card);
+    fetchCover(id, alb.t, alb.a).then(url => {
+      if (!url) return;
+      card.querySelectorAll('.cover-img').forEach(img => { img.src = url; img.style.display = 'block'; img.previousElementSibling && (img.previousElementSibling.style.display = 'none'); });
+    });
+  });
+}
+
+async function fetchCover(id, title, artist) {
+  if (covers[id]) return covers[id];
+  try {
+    const q = encodeURIComponent(`${title} ${artist}`);
+    const r = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=1&media=music`);
+    const d = await r.json();
+    if (d.resultCount > 0) {
+      const url = d.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+      covers[id] = url;
+      try { localStorage.setItem(COVER_KEY, JSON.stringify(covers)); } catch(e){}
+      return url;
+    }
+  } catch(e) {}
+  return '';
+}
+
+/* ── RENDER ─────────────────────────────────────────────────── */
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function starsHtml(r, small) {
+  const cls = small ? 'star-mini' : 'star-btn';
+  return [1,2,3,4,5].map(i => `<${small?'span':'button'} class="${cls}${i<=r?' on':''}"${small?'':` data-s="${i}"`}>★</${small?'span':'button'}>`).join('');
+}
+
+function render() {
+  const grid = document.getElementById('grid');
+  const q    = searchQ.toLowerCase();
+  let visible = ALBUMS.filter(alb => {
+    if (genre && alb.g !== genre) return false;
+    const st = stateOf(alb.id);
+    if (filter === 'done' && !st.listened) return false;
+    if (filter === 'pend' && st.listened)  return false;
+    if (q && !alb.t.toLowerCase().includes(q) && !alb.a.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (!visible.length) { grid.innerHTML = '<div class="empty"><i class="fas fa-search fa-2x"></i><p style="margin-top:10px">Sin resultados</p></div>'; return; }
+
+  grid.innerHTML = visible.map(alb => {
+    const st  = stateOf(alb.id);
+    const cov = covers[alb.id] || '';
+    return `<div class="album-card${st.listened?' is-done':''}" data-id="${alb.id}">
+      <div class="album-cover-placeholder" style="${cov?'display:none':''}""><i class="fas fa-compact-disc"></i></div>
+      <img class="album-cover cover-img" src="${esc(cov)}" style="${cov?'':'display:none'}" alt="">
+      <div class="album-info">
+        <div class="album-title">${esc(alb.t)}</div>
+        <div class="album-artist">${esc(alb.a)} · ${alb.y}</div>
+        <div class="album-footer">
+          <div class="stars-mini">${starsHtml(st.rating, true)}</div>
+          <span class="${st.listened?'done-badge':'pend-badge'}">${st.listened?'Escuchado':'Pendiente'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.album-card').forEach(card => observer.observe(card));
+  updateStats();
+}
+
+function updateStats() {
+  const total = ALBUMS.length;
+  const done  = ALBUMS.filter(a => stateOf(a.id).listened).length;
+  const pct   = total ? ((done/total)*100).toFixed(1) : 0;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-done').textContent  = done;
+  document.getElementById('s-pend').textContent  = total - done;
+  document.getElementById('prog-fill').style.width = `${pct}%`;
+  document.getElementById('prog-pct').textContent  = `${pct}% escuchado`;
+}
+
+/* ── GENRE SELECT ───────────────────────────────────────────── */
+function buildGenreSelect() {
+  const genres = [...new Set(ALBUMS.map(a => a.g))];
+  const sel = document.getElementById('genre-select');
+  genres.forEach(g => {
+    const o = document.createElement('option');
+    o.value = g; o.textContent = g;
+    sel.appendChild(o);
+  });
+}
+
+/* ── MODAL ──────────────────────────────────────────────────── */
+function openModal(id) {
+  openId = id;
+  const alb = ALBUMS.find(a => a.id === id);
+  const st  = stateOf(id);
+  if (!alb) return;
+
+  document.getElementById('m-num').textContent    = `#${alb.id}`;
+  document.getElementById('m-genre').textContent  = alb.g;
+  document.getElementById('m-title').textContent  = alb.t;
+  document.getElementById('m-meta').textContent   = `${alb.a} · ${alb.y}`;
+  document.getElementById('m-desc').textContent   = alb.d;
+  document.getElementById('m-comment').value      = st.comment || '';
+  document.getElementById('m-listened').checked   = !!st.listened;
+  document.getElementById('toggle-lbl').textContent = st.listened ? '✅ Escuchado' : 'No escuchado';
+
+  // Cover
+  const cov = covers[id] || '';
+  const img = document.getElementById('m-cover');
+  const ph  = document.getElementById('m-cover-ph');
+  if (cov) { img.src = cov; img.style.display = 'block'; ph.style.display = 'none'; }
+  else {
+    img.style.display = 'none'; ph.style.display = 'flex';
+    fetchCover(id, alb.t, alb.a).then(url => { if (url) { img.src = url; img.style.display = 'block'; ph.style.display = 'none'; } });
+  }
+
+  // Stars
+  setStarUI(st.rating || 0);
+
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  openId = null;
+}
+
+let currentRating = 0;
+function setStarUI(r) {
+  currentRating = r;
+  document.querySelectorAll('#stars-row .star-btn').forEach(b => {
+    b.classList.toggle('on', +b.dataset.s <= r);
+  });
+}
+
+/* ── PERSIST ────────────────────────────────────────────────── */
+function persist(id) {
+  const ts = Date.now();
+  try { localStorage.setItem(LS_KEY, JSON.stringify(userState)); localStorage.setItem(LS_TS, ts); } catch(e){}
+  if (!APPS_SCRIPT_URL) return;
+  const data = { id, ...stateOf(id) };
+  const qs   = new URLSearchParams({ action:'save_item', type:LIST_TYPE, data:JSON.stringify(data), ts });
+  fetch(`${APPS_SCRIPT_URL}?${qs}`, { mode:'no-cors' }).catch(()=>{});
+}
+
+async function loadFromAppsScript() {
+  if (!APPS_SCRIPT_URL) return;
+  try {
+    const r    = await fetch(`${APPS_SCRIPT_URL}?type=${LIST_TYPE}`);
+    const resp = await r.json();
+    const sheetTs = resp.ts || 0;
+    const localTs = parseInt(localStorage.getItem(LS_TS) || '0');
+    if (sheetTs > localTs && Array.isArray(resp.items) && resp.items.length) {
+      resp.items.forEach(item => { if (item.id) userState[item.id] = item; });
+      try { localStorage.setItem(LS_KEY, JSON.stringify(userState)); localStorage.setItem(LS_TS, sheetTs); } catch(e){}
+    }
+  } catch(e) {}
+}
+
+/* ── TOAST ──────────────────────────────────────────────────── */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ── EVENTS ─────────────────────────────────────────────────── */
+document.getElementById('grid').addEventListener('click', e => {
+  const card = e.target.closest('.album-card');
+  if (card) openModal(+card.dataset.id);
+});
+
+document.getElementById('overlay').addEventListener('click', e => { if (e.target === document.getElementById('overlay')) closeModal(); });
+document.getElementById('modal-close').addEventListener('click', closeModal);
+
+document.querySelectorAll('.ftab').forEach(b => b.addEventListener('click', () => {
+  filter = b.dataset.filter;
+  document.querySelectorAll('.ftab').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  render();
+}));
+
+document.getElementById('genre-select').addEventListener('change', e => { genre = e.target.value; render(); });
+document.getElementById('search').addEventListener('input', e => { searchQ = e.target.value; render(); });
+
+document.getElementById('stars-row').addEventListener('click', e => {
+  const btn = e.target.closest('.star-btn');
+  if (!btn) return;
+  const s = +btn.dataset.s;
+  setStarUI(currentRating === s ? 0 : s);
+});
+
+document.getElementById('m-listened').addEventListener('change', e => {
+  document.getElementById('toggle-lbl').textContent = e.target.checked ? '✅ Escuchado' : 'No escuchado';
+});
+
+document.getElementById('save-btn').addEventListener('click', () => {
+  if (!openId) return;
+  const listened = document.getElementById('m-listened').checked;
+  const comment  = document.getElementById('m-comment').value.trim();
+  userState[openId] = { id:openId, listened, rating:currentRating, comment };
+  persist(openId);
+  render();
+  closeModal();
+  showToast(listened ? '✅ Marcado como escuchado' : '💾 Guardado');
+});
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ── INIT ───────────────────────────────────────────────────── */
+async function init() {
+  loadLocal();
+  buildGenreSelect();
+  render();
+  await loadFromAppsScript();
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
