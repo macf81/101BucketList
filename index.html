@@ -483,9 +483,7 @@ async function loadFromAppsScript() {
   try {
     const r = await fetch(APPS_SCRIPT_URL);
     const resp = await r.json();
-    const sheetTs  = resp.ts || 0;
-    const localTs  = parseInt(localStorage.getItem('mcf_ts') || '0');
-    // Aplicar preferencias del Sheet (siempre, independiente del timestamp)
+    // Preferencias del Sheet (siempre)
     if (resp.settings) {
       if (resp.settings.view && ['grid','list'].includes(resp.settings.view)) {
         view = resp.settings.view;
@@ -498,15 +496,17 @@ async function loadFromAppsScript() {
         setAvatar(resp.settings.avatar);
       }
     }
-    // Usar Sheet si es más nuevo, o si no hay datos locales (localTs === 0 = dispositivo nuevo o LS borrado)
-    if (Array.isArray(resp.items) && resp.items.length && (sheetTs > localTs || localTs === 0)) {
+    // El Sheet es siempre la fuente de verdad — reemplaza localStorage en cada carga
+    if (Array.isArray(resp.items) && resp.items.length) {
       items = resp.items;
       localStorage.setItem(LS_KEY, JSON.stringify(items));
-      localStorage.setItem('mcf_ts', sheetTs.toString());
+      localStorage.setItem('mcf_ts', (resp.ts || Date.now()).toString());
       render();
       updateStats();
     }
-  } catch(e) {}
+  } catch(e) {
+    // Sin conexión: localStorage ya fue cargado en load(), no hacer nada
+  }
 }
 
 /* ════════════════════════════════════════════════════════
