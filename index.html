@@ -426,111 +426,6 @@ const APPS_SCRIPT_URL        = 'https://script.google.com/macros/s/AKfycbygO21Gp
 const CLOUDINARY_CLOUD_NAME   = 'duwmphdtx';
 const CLOUDINARY_UPLOAD_PRESET = 'bucketlist';
 
-/* ════════════════════════════════════════════════════════
-   DEFAULT DATA
-   ════════════════════════════════════════════════════════ */
-const DEFAULTS = [
-  {id:1,  t:"Ser mi propio jefe",                                                      c:false,cd:"",pd:"",ev:[],n:""},
-  {id:2,  t:"Tener mi propia marca de pisco y exportar",                               c:false,cd:"",pd:"",ev:[],n:""},
-  {id:3,  t:"Tener mi propio restaurante o bar",                                       c:false,cd:"",pd:"",ev:[],n:""},
-  {id:4,  t:"Comprarme una casa en Lunahuaná",                                         c:false,cd:"",pd:"",ev:[],n:""},
-  {id:5,  t:"Ser estudiante y terminar por lo menos 2 carreras",                       c:false,cd:"",pd:"",ev:[],n:""},
-  {id:6,  t:"Saltar en paracaídas",                                                    c:true, cd:"",pd:"",ev:[{k:"link",l:"Ver en Instagram",u:"https://www.instagram.com/p/B-TrvqOJZqn/"}],n:""},
-  {id:7,  t:"Saltar de un puente (puenting)",                                          c:true, cd:"",pd:"",ev:[{k:"link",l:"Ver video",u:"https://youtu.be/zzveTD971LY?hd=1"}],n:""},
-  {id:8,  t:"Hacer parapente",                                                         c:true, cd:"",pd:"",ev:[],n:""},
-  {id:9,  t:"Hacer bungee jumping",                                                    c:false,cd:"",pd:"",ev:[],n:""},
-  {id:10, t:"Escalar un nevado",                                                       c:true, cd:"",pd:"",ev:[],n:""},
-  {id:11, t:"Hacer trekking en el Perú",                                               c:false,cd:"",pd:"",ev:[{k:"link",l:"Rupac en Instagram",u:"https://www.instagram.com/p/B-48yLCpBkR"}],n:"✅ Hecho: Cañón del Colca, Marcahuasi, Rupac\n⏳ Pendiente: Choquequirao, Cordillera Huayhuash"},
-  {id:12, t:"Hacer trekking fuera del Perú: PCT / AT / Otros",                         c:false,cd:"",pd:"",ev:[],n:""},
-  {id:13, t:"Hacer rafting",                                                           c:true, cd:"",pd:"",ev:[{k:"link",l:"Ver en Instagram",u:"https://www.instagram.com/p/B-iteo0pOc5/"}],n:""},
-  {id:14, t:"Tener una VW Kombi e irse de viaje en ella",                              c:true, cd:"",pd:"",ev:[{k:"link",l:"#lalolavwkombi",u:"https://www.instagram.com/explore/tags/lalolavwkombi/"}],n:""},
-  {id:15, t:"Recorrer Sudamérica en auto hasta Tierra del Fuego",                      c:false,cd:"",pd:"",ev:[],n:""},
-  {id:16, t:"Ver una aurora boreal",                                                   c:false,cd:"",pd:"",ev:[],n:""},
-  {id:17, t:"Ver en vivo a mis grupos favoritos",                                      c:false,cd:"",pd:"",ev:[],n:"✅ Visto: Aerosmith, Alanis Morissette, Mar de Copas, Roxette\n⏳ Pendiente: Matchbox 20 / Rob Thomas"},
-  {id:18, t:"Hacer un viaje en moto",                                                  c:false,cd:"",pd:"",ev:[],n:""},
-  {id:19, t:"Aprender a tocar batería",                                                c:false,cd:"",pd:"",ev:[],n:""},
-  {id:20, t:"Viajar a todos los continentes",                                          c:false,cd:"",pd:"",ev:[],n:"Norte, Sur, Centroamérica, Europa, Asia, África, Oceanía, Antártida"},
-  {id:21, t:"Ser entrevistado en televisión",                                          c:false,cd:"",pd:"",ev:[],n:""},
-  {id:22, t:"Probar 100 cervezas diferentes",                                          c:true, cd:"",pd:"",ev:[{k:"link",l:"#mis100cervezasdiferentes",u:"https://www.instagram.com/explore/tags/mis100cervezasdiferentes"}],n:""},
-  {id:23, t:"Manejar un Lamborghini o un Ferrari",                                     c:true, cd:"",pd:"",ev:[{k:"link",l:"Ver en Instagram",u:"https://www.instagram.com/p/BLBdhNOjazv/"}],n:""},
-  {id:24, t:"Bañarme en una cascada",                                                  c:false,cd:"",pd:"",ev:[],n:""},
-  {id:25, t:"Dormir una noche en la orilla del mar",                                   c:false,cd:"",pd:"",ev:[],n:""},
-  {id:26, t:"Hacer un concierto",                                                      c:true, cd:"",pd:"",ev:[],n:""},
-  {id:27, t:"Volar en globo aerostático",                                              c:false,cd:"",pd:"",ev:[],n:""},
-  {id:28, t:"Hacer un corto o una película",                                           c:false,cd:"",pd:"",ev:[],n:""},
-  {id:29, t:"Cruzar un país en bicicleta",                                             c:false,cd:"",pd:"",ev:[],n:""},
-  {id:30, t:"Construir una casa rodante o una casa en un árbol",                       c:false,cd:"",pd:"",ev:[],n:""},
-  {id:31, t:"Hacer un vlog sobre lo que sea",                                          c:false,cd:"",pd:"",ev:[],n:""},
-  {id:32, t:"Caminar hasta que ya no puedas más",                                      c:false,cd:"",pd:"",ev:[],n:""},
-  {id:33, t:"Ser el protagonista en un corto o película",                              c:false,cd:"",pd:"",ev:[],n:""},
-  {id:34, t:"Patentar un invento tuyo aunque sea una idiotez",                         c:false,cd:"",pd:"",ev:[],n:""},
-  {id:35, t:"Hacer un viaje solo a algún sitio que desconozcas",                       c:true, cd:"",pd:"",ev:[],n:""},
-  {id:36, t:"Escribir la letra de una canción y ponerle música",                       c:true, cd:"",pd:"",ev:[],n:""},
-  {id:37, t:"Buscar la banda sonora de las imágenes de tu vida",                       c:false,cd:"",pd:"",ev:[],n:""},
-  {id:38, t:"Subirte a una montaña rusa",                                              c:true, cd:"",pd:"",ev:[],n:""},
-  {id:39, t:"Ser la voz de un grupo musical",                                          c:false,cd:"",pd:"",ev:[],n:""},
-  {id:40, t:"Lanzar fuegos artificiales",                                              c:false,cd:"",pd:"",ev:[],n:""},
-  {id:41, t:"Permanecer una noche en vela solo para ver amanecer",                     c:false,cd:"",pd:"",ev:[],n:""},
-  {id:42, t:"Manejar un convertible con el techo abierto y música a todo volumen",     c:false,cd:"",pd:"",ev:[],n:""},
-  {id:43, t:"Aprender a hacer un plato típico",                                        c:false,cd:"",pd:"",ev:[],n:""},
-  {id:44, t:"Ir al estadio a ver una final del Campeonato Mundial de fútbol",          c:false,cd:"",pd:"",ev:[],n:""},
-  {id:45, t:"Ir de campamento a un bosque o montaña por varios días",                  c:false,cd:"",pd:"",ev:[],n:""},
-  {id:46, t:"Hacer una fogata en la playa",                                            c:false,cd:"",pd:"",ev:[],n:""},
-  {id:47, t:"Aprender bartending",                                                     c:false,cd:"",pd:"",ev:[],n:""},
-  {id:48, t:"Correr en una maratón",                                                   c:false,cd:"",pd:"",ev:[],n:""},
-  {id:50, t:"Visitar París con el amor de tu vida",                                    c:false,cd:"",pd:"",ev:[],n:""},
-  {id:51, t:"Escribir y publicar un libro",                                            c:false,cd:"",pd:"",ev:[],n:""},
-  {id:52, t:"Hacer stand-up comedy o dar una conferencia",                             c:false,cd:"",pd:"",ev:[],n:""},
-  {id:53, t:"Ver la curvatura de la tierra",                                           c:false,cd:"",pd:"",ev:[],n:""},
-  {id:54, t:"Irme de viaje con mi mejor amigo",                                        c:true, cd:"",pd:"",ev:[],n:""},
-  {id:55, t:"Hacer voluntariado",                                                      c:false,cd:"",pd:"",ev:[],n:""},
-  {id:56, t:"Tener un programa de radio",                                              c:true, cd:"",pd:"",ev:[],n:""},
-  {id:57, t:"Pintar un cuadro y colgarlo en casa",                                     c:false,cd:"",pd:"",ev:[],n:""},
-  {id:58, t:"Donar sangre a quien lo necesite",                                        c:true, cd:"",pd:"",ev:[],n:""},
-  {id:59, t:"Conocer a un gran maestro que toque tu vida y abra tu mente",             c:false,cd:"",pd:"",ev:[],n:""},
-  {id:60, t:"Tener una colección de más de 100 cosas de algo",                         c:false,cd:"",pd:"",ev:[],n:"estampas, CDs, timbres, llaveros…"},
-  {id:61, t:"Hacer el árbol genealógico de tu familia",                                c:false,cd:"",pd:"",ev:[],n:""},
-  {id:62, t:"Escribir un poema y memorizarlo",                                         c:true, cd:"",pd:"",ev:[],n:""},
-  {id:63, t:"Encontrar el amor de tu vida",                                            c:true, cd:"",pd:"",ev:[],n:""},
-  {id:64, t:"Besar a alguien bajo la lluvia",                                          c:false,cd:"",pd:"",ev:[],n:""},
-  {id:65, t:"Casarme",                                                                 c:true, cd:"",pd:"",ev:[],n:""},
-  {id:66, t:"Tener dos hijas",                                                         c:true, cd:"",pd:"",ev:[{k:"link",l:"Ver en Instagram",u:"https://www.instagram.com/p/B1MmGrFg0db/"}],n:""},
-  {id:67, t:"Pasar un fin de semana en una cabaña frente a un lago",                   c:false,cd:"",pd:"",ev:[],n:""},
-  {id:68, t:"Álbum con foto e historia de cada persona que marcó tu vida",             c:false,cd:"",pd:"",ev:[],n:""},
-  {id:69, t:"Ponerle nombre a alguien: un hijo, una estrella, un perro",               c:true, cd:"",pd:"",ev:[],n:""},
-  {id:70, t:"Dejarme una carta para leerla 20 años después",                           c:false,cd:"",pd:"",ev:[],n:""},
-  {id:71, t:"Tomar un baño a la luz de las velas con alguien especial",                c:false,cd:"",pd:"",ev:[],n:""},
-  {id:72, t:"Buscar y recuperar a un viejo amigo que desapareció",                     c:false,cd:"",pd:"",ev:[],n:""},
-  {id:73, t:"Apoyar el sueño de otra persona",                                         c:false,cd:"",pd:"",ev:[],n:""},
-  {id:74, t:"Salvar una vida",                                                         c:false,cd:"",pd:"",ev:[],n:""},
-  {id:75, t:"Tumbarme en medio del campo un día de lluvia",                            c:false,cd:"",pd:"",ev:[],n:""},
-  {id:76, t:"Leer todos los libros que cualquiera debe leer antes de morir",           c:false,cd:"",pd:"",ev:[],n:""},
-  {id:77, t:"Ver todas las películas que cualquiera debe ver antes de morir",          c:false,cd:"",pd:"",ev:[],n:""},
-  {id:78, t:"Regalar algo muy querido del que duela desprenderte",                     c:false,cd:"",pd:"",ev:[],n:""},
-  {id:79, t:"Pasar un tiempo significativo completamente solo",                        c:false,cd:"",pd:"",ev:[],n:""},
-  {id:80, t:"Ser importante para otra persona",                                        c:false,cd:"",pd:"",ev:[],n:""},
-  {id:81, t:"Aprender más de un idioma además del mío",                               c:false,cd:"",pd:"",ev:[],n:"✅ Inglés\n⏳ Francés"},
-  {id:82, t:"Contarle a alguien la historia de mi vida sin omitir ningún detalle",   c:false,cd:"",pd:"",ev:[],n:""},
-  {id:83, t:"Que alguien me cuente la historia de su vida sin omitir ningún detalle", c:false,cd:"",pd:"",ev:[],n:""},
-  {id:84, t:"Tener una conversación profunda con un indigente",                        c:false,cd:"",pd:"",ev:[],n:""},
-  {id:85, t:"Dejar el trabajo por seguir un sueño",                                   c:false,cd:"",pd:"",ev:[],n:""},
-  {id:86, t:"Ver el mundo a través de los ojos de un niño",                           c:false,cd:"",pd:"",ev:[],n:""},
-  {id:87, t:"Ser el único ser humano en 100 km a la redonda",                         c:false,cd:"",pd:"",ev:[],n:""},
-  {id:88, t:"Participar en una manifestación",                                         c:false,cd:"",pd:"",ev:[],n:""},
-  {id:89, t:"Ser activista por una causa que creo justa",                              c:false,cd:"",pd:"",ev:[],n:""},
-  {id:90, t:"Formar parte de una revolución",                                          c:false,cd:"",pd:"",ev:[],n:""},
-  {id:91, t:"Subir a un sitio alto y gritar lo más fuerte que pueda",                  c:false,cd:"",pd:"",ev:[],n:""},
-  {id:92, t:"Enseñar tu idioma a un extranjero",                                       c:false,cd:"",pd:"",ev:[],n:""},
-  {id:93, t:"Cambiar de profesión e irte a vivir a otro lugar",                        c:false,cd:"",pd:"",ev:[],n:""},
-  {id:94, t:"Memorizar un poema",                                                      c:true, cd:"",pd:"",ev:[],n:""},
-  {id:95, t:"Pedir perdón y sentirme perdonado",                                       c:false,cd:"",pd:"",ev:[],n:""},
-  {id:96, t:"Enviar un mensaje en una botella",                                        c:false,cd:"",pd:"",ev:[],n:""},
-  {id:97, t:"Conocer a un artista, cantante o político que realmente admire",          c:false,cd:"",pd:"",ev:[],n:""},
-  {id:98, t:"Ser el mejor del mundo en lo que sea",                                    c:false,cd:"",pd:"",ev:[],n:""},
-  {id:99, t:"Tener una mascota",                                                       c:true, cd:"",pd:"",ev:[{k:"link",l:"Ver en Instagram",u:"https://www.instagram.com/p/ccV6B1QiGL/"}],n:""},
-  {id:100,t:"Enseñar en un colegio con escasos recursos de mi país",                  c:false,cd:"",pd:"",ev:[],n:""},
-  {id:101,t:"Hacer una nueva lista de 101 cosas cuando acabe esta",                   c:false,cd:"",pd:"",ev:[],n:""},
-];
 
 /* ════════════════════════════════════════════════════════
    STATE
@@ -561,8 +456,8 @@ function load() {
       return;
     } catch(e) {}
   }
-  items = DEFAULTS.map(d => ({...d, ev: d.ev.map(e => ({...e}))}));
-  persist();
+  // Sin datos locales: dejar items vacío y esperar que loadFromAppsScript() cargue el Sheet
+  items = [];
 }
 
 // changedId = id del item que cambió; isDelete = true si fue eliminado
@@ -603,8 +498,8 @@ async function loadFromAppsScript() {
         setAvatar(resp.settings.avatar);
       }
     }
-    // Usar Sheet solo si es más nuevo que los datos locales
-    if (sheetTs > localTs && Array.isArray(resp.items) && resp.items.length) {
+    // Usar Sheet si es más nuevo, o si no hay datos locales (localTs === 0 = dispositivo nuevo o LS borrado)
+    if (Array.isArray(resp.items) && resp.items.length && (sheetTs > localTs || localTs === 0)) {
       items = resp.items;
       localStorage.setItem(LS_KEY, JSON.stringify(items));
       localStorage.setItem('mcf_ts', sheetTs.toString());
