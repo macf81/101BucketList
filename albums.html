@@ -104,6 +104,19 @@
     .save-btn { width:100%; margin-top:14px; padding:13px; background:var(--text); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; transition:opacity .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
     .save-btn:hover { opacity:.85; }
 
+    .add-btn { padding:8px 16px; background:var(--blue); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+    .add-btn:hover { opacity:.85; }
+    .modal-tabs { display:flex; border-bottom:1px solid var(--border); }
+    .mtab { flex:1; padding:10px; text-align:center; font-size:13px; font-weight:600; color:var(--text2); cursor:pointer; border-bottom:2px solid transparent; background:none; border-top:none; border-left:none; border-right:none; }
+    .mtab.active { color:var(--blue); border-bottom-color:var(--blue); }
+    .fgroup { margin-top:14px; }
+    .flabel { display:block; font-size:12px; font-weight:600; color:var(--text2); margin-bottom:6px; }
+    .finput { width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; outline:none; color:var(--text); background:var(--card); }
+    .finput:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+    .form-actions { display:flex; gap:10px; margin-top:16px; }
+    .btn-danger { padding:12px 16px; background:#fef2f2; color:var(--red); border:1px solid var(--red); border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; }
+    .btn-danger:hover { background:var(--red); color:#fff; }
+
     .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:#1f2937; color:#fff; padding:10px 20px; border-radius:20px; font-size:14px; font-weight:500; z-index:999; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; }
     .toast.show { opacity:1; }
   </style>
@@ -146,6 +159,7 @@
   <select class="genre-select" id="genre-select">
     <option value="">Todos los géneros</option>
   </select>
+  <button class="add-btn" id="add-btn"><i class="fas fa-plus"></i> Agregar</button>
 </div>
 
 <!-- ── GRID ─────────────────────────────────────────────────── -->
@@ -158,6 +172,11 @@
       <span class="modal-num" id="m-num">#1</span>
       <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
     </div>
+    <div class="modal-tabs" id="modal-tabs">
+      <button class="mtab active" data-tab="view">Ver</button>
+      <button class="mtab" data-tab="edit" id="edit-tab-btn" style="display:none">Editar</button>
+    </div>
+    <div id="tab-view">
     <img class="modal-cover" id="m-cover" style="display:none">
     <div class="modal-cover-placeholder" id="m-cover-ph"><i class="fas fa-compact-disc"></i></div>
     <div class="modal-body">
@@ -186,6 +205,35 @@
 
       <button class="save-btn" id="save-btn"><i class="fas fa-save"></i> Guardar</button>
     </div>
+    </div><!-- /tab-view -->
+    <div id="tab-edit" style="display:none">
+      <div class="modal-body">
+        <div class="fgroup">
+          <label class="flabel">Título</label>
+          <input type="text" id="e-title" class="finput" placeholder="Nombre del álbum">
+        </div>
+        <div class="fgroup">
+          <label class="flabel">Artista</label>
+          <input type="text" id="e-artist" class="finput" placeholder="ej: The Beatles">
+        </div>
+        <div class="fgroup">
+          <label class="flabel">Año</label>
+          <input type="text" id="e-year" class="finput" placeholder="ej: 1969">
+        </div>
+        <div class="fgroup">
+          <label class="flabel">Género</label>
+          <input type="text" id="e-genre" class="finput" placeholder="ej: Rock Clásico">
+        </div>
+        <div class="fgroup">
+          <label class="flabel">Descripción (opcional)</label>
+          <textarea id="e-desc" class="finput" style="min-height:70px;resize:vertical" placeholder="¿Qué tiene de especial este álbum?"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="save-btn" id="edit-save-btn"><i class="fas fa-save"></i> Guardar cambios</button>
+          <button class="btn-danger" id="delete-btn" style="display:none"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div><!-- /tab-edit -->
   </div>
 </div>
 
@@ -193,9 +241,10 @@
 
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbygO21Gp_U2i2qaRV7L1-rXctzA6Cyn1eQlCfwF-5WZ6tzXpKYOcqiIb_5nKsiehcEpeQ/exec';
-const LS_KEY    = 'mcf_albums_v1';
-const COVER_KEY = 'mcf_covers_v1';
-const LIST_TYPE = 'albums';
+const LS_KEY     = 'mcf_albums_v1';
+const COVER_KEY  = 'mcf_covers_v1';
+const CUSTOM_KEY = 'mcf_albums_custom_v1';
+const LIST_TYPE  = 'albums';
 
 /* ── ALBUM DATA ─────────────────────────────────────────────── */
 const ALBUMS = [
@@ -357,18 +406,23 @@ const ALBUMS = [
 
 /* ── STATE ──────────────────────────────────────────────────── */
 const LS_TS = 'mcf_albums_ts';
-let userState = {}; // id → { listened, rating, comment }
-let filter    = 'all';
-let genre     = '';
-let searchQ   = '';
-let openId    = null;
-let covers    = {};
-const observer = new IntersectionObserver(onVisible, { rootMargin:'200px' });
+let userState    = {}; // id → { listened, rating, comment }
+let customAlbums = []; // user-added albums
+let filter       = 'all';
+let genre        = '';
+let searchQ      = '';
+let openId       = null;
+let curTab       = 'view';
+let covers       = {};
+const observer   = new IntersectionObserver(onVisible, { rootMargin:'200px' });
 
 function loadLocal() {
-  try { userState = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { userState = {}; }
-  try { covers    = JSON.parse(localStorage.getItem(COVER_KEY) || '{}'); } catch(e) { covers = {}; }
+  try { userState    = JSON.parse(localStorage.getItem(LS_KEY)     || '{}'); } catch(e) { userState = {}; }
+  try { covers       = JSON.parse(localStorage.getItem(COVER_KEY)  || '{}'); } catch(e) { covers = {}; }
+  try { customAlbums = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); } catch(e) { customAlbums = []; }
 }
+
+function getAllAlbums() { return [...ALBUMS, ...customAlbums]; }
 
 function stateOf(id) {
   return userState[id] || { listened:false, rating:0, comment:'' };
@@ -417,7 +471,7 @@ function starsHtml(r, small) {
 function render() {
   const grid = document.getElementById('grid');
   const q    = searchQ.toLowerCase();
-  let visible = ALBUMS.filter(alb => {
+  let visible = getAllAlbums().filter(alb => {
     if (genre && alb.g !== genre) return false;
     const st = stateOf(alb.id);
     if (filter === 'done' && !st.listened) return false;
@@ -450,8 +504,9 @@ function render() {
 }
 
 function updateStats() {
-  const total = ALBUMS.length;
-  const done  = ALBUMS.filter(a => stateOf(a.id).listened).length;
+  const all   = getAllAlbums();
+  const total = all.length;
+  const done  = all.filter(a => stateOf(a.id).listened).length;
   const pct   = total ? ((done/total)*100).toFixed(1) : 0;
   document.getElementById('s-total').textContent = total;
   document.getElementById('s-done').textContent  = done;
@@ -462,8 +517,10 @@ function updateStats() {
 
 /* ── GENRE SELECT ───────────────────────────────────────────── */
 function buildGenreSelect() {
-  const genres = [...new Set(ALBUMS.map(a => a.g))];
-  const sel = document.getElementById('genre-select');
+  const genres = [...new Set(getAllAlbums().map(a => a.g))];
+  const sel    = document.getElementById('genre-select');
+  // Reset to first option only
+  sel.length = 1;
   genres.forEach(g => {
     const o = document.createElement('option');
     o.value = g; o.textContent = g;
@@ -472,17 +529,35 @@ function buildGenreSelect() {
 }
 
 /* ── MODAL ──────────────────────────────────────────────────── */
+function switchTab(tab) {
+  curTab = tab;
+  document.querySelectorAll('.mtab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('tab-view').style.display = tab === 'view' ? '' : 'none';
+  document.getElementById('tab-edit').style.display = tab === 'edit' ? '' : 'none';
+}
+
+function newCustomId() {
+  const ids = customAlbums.map(a => a.id);
+  return ids.length ? Math.max(...ids) + 1 : 10001;
+}
+
 function openModal(id) {
   openId = id;
-  const alb = ALBUMS.find(a => a.id === id);
-  const st  = stateOf(id);
+  const alb       = getAllAlbums().find(a => a.id === id);
+  const st        = stateOf(id);
+  const isCustom  = customAlbums.some(a => a.id === id);
   if (!alb) return;
 
-  document.getElementById('m-num').textContent    = `#${alb.id}`;
-  document.getElementById('m-genre').textContent  = alb.g;
+  // Show/hide edit tab
+  document.getElementById('edit-tab-btn').style.display = isCustom ? '' : 'none';
+  if (!isCustom && curTab === 'edit') switchTab('view');
+  else switchTab(curTab === 'edit' && isCustom ? 'edit' : 'view');
+
+  document.getElementById('m-num').textContent    = isCustom ? `#${alb.id - 10000 + ALBUMS.length + 1}` : `#${alb.id}`;
+  document.getElementById('m-genre').textContent  = alb.g || '';
   document.getElementById('m-title').textContent  = alb.t;
-  document.getElementById('m-meta').textContent   = `${alb.a} · ${alb.y}`;
-  document.getElementById('m-desc').textContent   = alb.d;
+  document.getElementById('m-meta').textContent   = alb.a + (alb.y ? ` · ${alb.y}` : '');
+  document.getElementById('m-desc').textContent   = alb.d || '';
   document.getElementById('m-comment').value      = st.comment || '';
   document.getElementById('m-listened').checked   = !!st.listened;
   document.getElementById('toggle-lbl').textContent = st.listened ? '✅ Escuchado' : 'No escuchado';
@@ -500,6 +575,29 @@ function openModal(id) {
   // Stars
   setStarUI(st.rating || 0);
 
+  // Populate edit fields for custom albums
+  if (isCustom) {
+    document.getElementById('e-title').value  = alb.t || '';
+    document.getElementById('e-artist').value = alb.a || '';
+    document.getElementById('e-year').value   = String(alb.y || '');
+    document.getElementById('e-genre').value  = alb.g || '';
+    document.getElementById('e-desc').value   = alb.d || '';
+    document.getElementById('delete-btn').style.display = '';
+  }
+
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function openAddModal() {
+  openId = null;
+  document.getElementById('m-num').textContent = 'Nuevo álbum';
+  document.getElementById('edit-tab-btn').style.display = '';
+  document.getElementById('e-title').value = document.getElementById('e-artist').value =
+    document.getElementById('e-year').value = document.getElementById('e-genre').value =
+    document.getElementById('e-desc').value = '';
+  document.getElementById('delete-btn').style.display = 'none';
+  switchTab('edit');
   document.getElementById('overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -521,10 +619,12 @@ function setStarUI(r) {
 /* ── PERSIST ────────────────────────────────────────────────── */
 function persist(id) {
   const ts = Date.now();
-  try { localStorage.setItem(LS_KEY, JSON.stringify(userState)); localStorage.setItem(LS_TS, ts); } catch(e){}
+  try { localStorage.setItem(LS_KEY,     JSON.stringify(userState));    localStorage.setItem(LS_TS, ts); } catch(e){}
+  try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customAlbums)); } catch(e){}
   if (!APPS_SCRIPT_URL) return;
-  const data = { id, ...stateOf(id) };
-  const qs   = new URLSearchParams({ action:'save_item', type:LIST_TYPE, data:JSON.stringify(data), ts });
+  const custom = customAlbums.find(a => a.id === id);
+  const data   = custom ? { ...custom, ...stateOf(id), isCustom:true } : { id, ...stateOf(id) };
+  const qs     = new URLSearchParams({ action:'save_item', type:LIST_TYPE, data:JSON.stringify(data), ts });
   fetch(`${APPS_SCRIPT_URL}?${qs}`, { mode:'no-cors' }).catch(()=>{});
 }
 
@@ -536,8 +636,22 @@ async function loadFromAppsScript() {
     const sheetTs = resp.ts || 0;
     const localTs = parseInt(localStorage.getItem(LS_TS) || '0');
     if (sheetTs > localTs && Array.isArray(resp.items) && resp.items.length) {
-      resp.items.forEach(item => { if (item.id) userState[item.id] = item; });
-      try { localStorage.setItem(LS_KEY, JSON.stringify(userState)); localStorage.setItem(LS_TS, sheetTs); } catch(e){}
+      resp.items.forEach(item => {
+        if (!item.id) return;
+        if (item.isCustom) {
+          if (!customAlbums.find(a => a.id === item.id)) {
+            customAlbums.push({ id:item.id, isCustom:true, t:item.t||'', a:item.a||'', y:item.y||'', g:item.g||'Mis Artistas', d:item.d||'' });
+          }
+          userState[item.id] = { id:item.id, listened:item.listened, rating:item.rating, comment:item.comment };
+        } else {
+          userState[item.id] = item;
+        }
+      });
+      try {
+        localStorage.setItem(LS_KEY,     JSON.stringify(userState));
+        localStorage.setItem(CUSTOM_KEY, JSON.stringify(customAlbums));
+        localStorage.setItem(LS_TS, sheetTs);
+      } catch(e){}
     }
   } catch(e) {}
 }
@@ -559,6 +673,49 @@ document.getElementById('grid').addEventListener('click', e => {
 
 document.getElementById('overlay').addEventListener('click', e => { if (e.target === document.getElementById('overlay')) closeModal(); });
 document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('add-btn').addEventListener('click', openAddModal);
+document.querySelectorAll('.mtab').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+document.getElementById('edit-save-btn').addEventListener('click', () => {
+  const title  = document.getElementById('e-title').value.trim();
+  const artist = document.getElementById('e-artist').value.trim();
+  if (!title) { alert('Ingresa el título'); return; }
+  let isNew = false;
+  if (openId) {
+    const alb = customAlbums.find(a => a.id === openId);
+    if (alb) {
+      alb.t = title; alb.a = artist;
+      alb.y = document.getElementById('e-year').value.trim();
+      alb.g = document.getElementById('e-genre').value.trim() || 'Mis Artistas';
+      alb.d = document.getElementById('e-desc').value.trim();
+    }
+  } else {
+    isNew = true;
+    const newAlb = { id:newCustomId(), isCustom:true, t:title, a:artist,
+      y:document.getElementById('e-year').value.trim(),
+      g:document.getElementById('e-genre').value.trim() || 'Mis Artistas',
+      d:document.getElementById('e-desc').value.trim() };
+    customAlbums.push(newAlb);
+    openId = newAlb.id;
+    userState[newAlb.id] = { id:newAlb.id, listened:false, rating:0, comment:'' };
+  }
+  persist(openId);
+  buildGenreSelect();
+  render();
+  closeModal();
+  showToast(isNew ? '✅ Álbum agregado' : '✅ Actualizado');
+});
+
+document.getElementById('delete-btn').addEventListener('click', () => {
+  if (!openId || !confirm('¿Eliminar este álbum?')) return;
+  customAlbums = customAlbums.filter(a => a.id !== openId);
+  delete userState[openId];
+  try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customAlbums)); localStorage.setItem(LS_KEY, JSON.stringify(userState)); } catch(e){}
+  const qs = new URLSearchParams({ action:'delete_item', type:LIST_TYPE, id:openId, ts:Date.now() });
+  fetch(`${APPS_SCRIPT_URL}?${qs}`, { mode:'no-cors' }).catch(()=>{});
+  buildGenreSelect(); render(); closeModal();
+  showToast('🗑️ Eliminado');
+});
 
 document.querySelectorAll('.ftab').forEach(b => b.addEventListener('click', () => {
   filter = b.dataset.filter;
