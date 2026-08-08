@@ -260,10 +260,10 @@ const observer = new IntersectionObserver(onVisible, { rootMargin:'200px' });
 function loadLocal() {
   try { albums = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e) { albums = null; }
   try { covers = JSON.parse(localStorage.getItem(COVER_KEY) || '{}'); } catch(e) { covers = {}; }
-  // First-ever load: seed with the 141 albums
+  // Fallback offline: seed en memoria pero NO guardar en localStorage (el Sheet siempre gana)
   if (!albums || !albums.length) {
     albums = SEED_ALBUMS.map(a => ({ ...a, listened:false, rating:0, comment:'' }));
-    saveLocal();
+    // No llamar saveLocal() aquí — así el Sheet siempre reemplaza al cargar
   }
 }
 
@@ -278,6 +278,43 @@ function newId() {
 }
 
 /* ── COVERS (iTunes API) ───────────────────────────────────── */
+// Cola serializada para evitar 429 (Too Many Requests) de iTunes
+const coverQueue = [];
+let coverRunning = false;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function processCoverQueue() {
+  if (coverRunning) return;
+  coverRunning = true;
+  while (coverQueue.length) {
+    const { id, title, artist, resolve } = coverQueue.shift();
+    if (covers[id]) { resolve(covers[id]); continue; }
+    try {
+      const q = encodeURIComponent(`${title} ${artist}`);
+      const r = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=1&media=music`);
+      if (r.ok) {
+        const d = await r.json();
+        if (d.resultCount > 0) {
+          const url = d.results[0].artworkUrl100.replace('100x100bb','600x600bb');
+          covers[id] = url;
+          try { localStorage.setItem(COVER_KEY, JSON.stringify(covers)); } catch(e){}
+          resolve(url);
+        } else { resolve(''); }
+      } else { resolve(''); }
+    } catch(e) { resolve(''); }
+    if (coverQueue.length) await sleep(150); // 150ms entre requests → evita rate limit
+  }
+  coverRunning = false;
+}
+
+function fetchCover(id, title, artist) {
+  if (covers[id]) return Promise.resolve(covers[id]);
+  return new Promise(resolve => {
+    coverQueue.push({ id, title, artist, resolve });
+    processCoverQueue();
+  });
+}
+
 function onVisible(entries) {
   entries.forEach(entry => {
     if (!entry.isIntersecting) return;
@@ -286,11 +323,7 @@ function onVisible(entries) {
     const alb  = getAlbum(id);
     if (!alb) return;
     observer.unobserve(card);
-    if (covers[id]) {
-      applyCoverToCard(card, covers[id]);
-    } else {
-      fetchCover(id, alb.t, alb.a).then(url => { if (url) applyCoverToCard(card, url); });
-    }
+    fetchCover(id, alb.t, alb.a).then(url => { if (url) applyCoverToCard(card, url); });
   });
 }
 
@@ -299,22 +332,6 @@ function applyCoverToCard(card, url) {
   const ph  = card.querySelector('.album-cover-ph');
   if (img) { img.src = url; img.style.display = 'block'; }
   if (ph)  { ph.style.display = 'none'; }
-}
-
-async function fetchCover(id, title, artist) {
-  if (covers[id]) return covers[id];
-  try {
-    const q = encodeURIComponent(`${title} ${artist}`);
-    const r = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=1&media=music`);
-    const d = await r.json();
-    if (d.resultCount > 0) {
-      const url = d.results[0].artworkUrl100.replace('100x100bb','600x600bb');
-      covers[id] = url;
-      try { localStorage.setItem(COVER_KEY, JSON.stringify(covers)); } catch(e){}
-      return url;
-    }
-  } catch(e) {}
-  return '';
 }
 
 /* ── RENDER ────────────────────────────────────────────────── */
@@ -469,21 +486,22 @@ async function loadFromAppsScript() {
   try {
     const r    = await fetch(`${APPS_SCRIPT_URL}?type=${LIST_TYPE}`);
     const resp = await r.json();
-    const sheetTs = resp.ts || 0;
-    const localTs = parseInt(localStorage.getItem(LS_TS) || '0');
-    if (sheetTs > localTs && Array.isArray(resp.items) && resp.items.length) {
-      // Merge sheet data: sheet items take priority for listened/rating/comment;
-      // keep local metadata for seed albums if not in sheet
+    // El Sheet es siempre la fuente de verdad — sin comparación de timestamps
+    if (Array.isArray(resp.items) && resp.items.length) {
+      // Merge: sheet gana, pero conservar álbumes locales no presentes en el sheet (ej. agregados offline)
       const sheetMap = {};
       resp.items.forEach(item => { if (item.id) sheetMap[item.id] = item; });
       albums = albums.map(a => sheetMap[a.id] ? { ...a, ...sheetMap[a.id] } : a);
-      // Add any new albums that exist in sheet but not locally
       resp.items.forEach(item => {
         if (item.id && item.t && !albums.find(a => a.id === item.id)) albums.push(item);
       });
-      saveLocal(); localStorage.setItem(LS_TS, sheetTs);
+      saveLocal();
+      localStorage.setItem(LS_TS, resp.ts || Date.now());
+      render(); updateStats();
     }
-  } catch(e) {}
+  } catch(e) {
+    // Sin conexión: quedamos con lo que cargó loadLocal()
+  }
 }
 
 /* ── TOAST ─────────────────────────────────────────────────── */
