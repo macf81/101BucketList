@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>101 Cosas • Mario</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -995,14 +998,16 @@ document.getElementById('avatar-input').addEventListener('change', async e => {
    ════════════════════════════════════════════════════════ */
 async function init() {
   load();
+  // Render inmediato desde localStorage para no ver pantalla vacía
+  applyView();
+  updateStats();
+  render();
+  // Luego Sheet (re-renderiza si hay datos más nuevos)
   await loadFromAppsScript();
   const saved = localStorage.getItem('mcf_avatar');
   // Ignorar base64 (formato antiguo, no sincronizable) — usar solo URLs reales
   if (saved && !saved.startsWith('data:')) setAvatar(saved);
   else setAvatar('https://unavatar.io/spotify/user:1237100585');
-  applyView();
-  updateStats();
-  render();
 }
 
 init();
