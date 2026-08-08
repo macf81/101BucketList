@@ -236,9 +236,10 @@
 <script>
 /* ── CONFIG ─────────────────────────────────────────────────── */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbygO21Gp_U2i2qaRV7L1-rXctzA6Cyn1eQlCfwF-5WZ6tzXpKYOcqiIb_5nKsiehcEpeQ/exec';
+const LASTFM_KEY = 'ce899e55272afef3754b77df638266b8';
 const LS_KEY    = 'mcf_albums_v2';   // v2: unified schema
 const LS_TS     = 'mcf_albums_ts2';
-const COVER_KEY = 'mcf_covers_v1';
+const COVER_KEY = 'mcf_covers_v2';   // v2: reset cache para usar Last.fm
 const LIST_TYPE = 'albums';
 
 /* ── SEED DATA (initial 141 albums — used only if DB is empty) ─ */
@@ -289,20 +290,34 @@ async function processCoverQueue() {
   while (coverQueue.length) {
     const { id, title, artist, resolve } = coverQueue.shift();
     if (covers[id]) { resolve(covers[id]); continue; }
+    let url = '';
+    // Last.fm: album.getInfo (CORS habilitado, base de datos excelente)
     try {
-      const q = encodeURIComponent(`${title} ${artist}`);
-      const r = await fetch(`https://itunes.apple.com/search?term=${q}&entity=album&limit=1&media=music`);
+      const params = new URLSearchParams({
+        method: 'album.getInfo',
+        artist, album: title,
+        api_key: LASTFM_KEY,
+        format: 'json',
+        autocorrect: '1'
+      });
+      const r = await fetch(`https://ws.audioscrobbler.com/2.0/?${params}`);
       if (r.ok) {
         const d = await r.json();
-        if (d.resultCount > 0) {
-          const url = d.results[0].artworkUrl100.replace('100x100bb','600x600bb');
-          covers[id] = url;
-          try { localStorage.setItem(COVER_KEY, JSON.stringify(covers)); } catch(e){}
-          resolve(url);
-        } else { resolve(''); }
-      } else { resolve(''); }
-    } catch(e) { resolve(''); }
-    if (coverQueue.length) await sleep(150); // 150ms entre requests → evita rate limit
+        if (d.album && d.album.image) {
+          // Preferir tamaño "extralarge" o "large"
+          const imgs = d.album.image;
+          const xl  = imgs.find(i => i.size === 'extralarge');
+          const lg  = imgs.find(i => i.size === 'large');
+          url = (xl && xl['#text']) || (lg && lg['#text']) || '';
+        }
+      }
+    } catch(e) {}
+    if (url) {
+      covers[id] = url;
+      try { localStorage.setItem(COVER_KEY, JSON.stringify(covers)); } catch(e){}
+    }
+    resolve(url);
+    if (coverQueue.length) await sleep(200); // 200ms entre requests
   }
   coverRunning = false;
 }
