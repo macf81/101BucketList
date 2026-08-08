@@ -258,7 +258,7 @@
         <input type="file" id="avatar-input" accept="image/*">
         <div>
           <div class="profile-name">Mario Contreras Farías</div>
-          <div class="profile-bio">101 Cosas que haré antes de morir ✈️ 🏔️ 🎸 🌊</div>
+          <div class="profile-bio">Lista de cosas que voy a hacer antes de morir ✈️ 🏔️ 🎸 🌊</div>
           <div class="profile-social">
             <!-- ✏️ Cambia YOUR_INSTAGRAM y YOUR_FACEBOOK -->
             <a href="https://www.instagram.com/macf81/" target="_blank" class="social-link"><i class="fab fa-instagram"></i> Instagram</a>
@@ -273,8 +273,6 @@
           <div class="stat completed"><div class="stat-num" id="s-done">—</div><div class="stat-lbl">Completadas</div></div>
           <div class="stat-div"></div>
           <div class="stat"><div class="stat-num" id="s-pend">—</div><div class="stat-lbl">Pendientes</div></div>
-          <div class="stat-div"></div>
-          <div class="stat planned"><div class="stat-num" id="s-year">—</div><div class="stat-lbl" id="s-year-lbl">Este año</div></div>
         </div>
         <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
         <div class="progress-pct" id="prog-pct"></div>
@@ -540,13 +538,10 @@ function makeBadge(item) {
    ════════════════════════════════════════════════════════ */
 function updateStats() {
   const total = items.length, done = items.filter(i => i.c).length;
-  const pct = total ? ((done/total)*100).toFixed(1) : 0;
-  const planned = items.filter(i => !i.c && i.pd).length;
+  const pct = total ? Math.round((done/total)*100) : 0;
   document.getElementById('s-total').textContent = total;
   document.getElementById('s-done').textContent  = done;
   document.getElementById('s-pend').textContent  = total - done;
-  document.getElementById('s-year').textContent  = planned;
-  document.getElementById('s-year-lbl').textContent = 'Programadas';
   document.getElementById('prog-fill').style.width = `${pct}%`;
   document.getElementById('prog-pct').textContent   = `${pct}% completado`;
 }
